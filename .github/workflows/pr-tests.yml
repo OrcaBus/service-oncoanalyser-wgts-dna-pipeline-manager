@@ -73,7 +73,7 @@ jobs:
 
       - name: Lint and code formatting
         run: |
-          make check-all
+          make check
 
   test-iac:
     runs-on: ubuntu-22.04-arm
