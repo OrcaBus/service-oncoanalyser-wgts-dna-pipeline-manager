@@ -40,6 +40,6 @@
   "dependencies": {
     "aws-cdk-lib": "^2.195.0",
     "constructs": "^10.4.2",
-    "@orcabus/platform-cdk-constructs": "0.0.12"
+    "@orcabus/platform-cdk-constructs": "0.0.57"
   }
 }

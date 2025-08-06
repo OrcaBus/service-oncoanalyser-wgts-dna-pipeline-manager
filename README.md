@@ -1,80 +1,162 @@
-Template Service
+Oncoanalyser WGTS DNA Pipeline Orchestration Service
 ================================================================================
 
-- [Template Service](#template-service)
-  - [Service Description](#service-description)
-    - [Name \& responsibility](#name--responsibility)
-    - [Description](#description)
-    - [API Endpoints](#api-endpoints)
-    - [Consumed Events](#consumed-events)
-    - [Published Events](#published-events)
-    - [(Internal) Data states \& persistence model](#internal-data-states--persistence-model)
-    - [Major Business Rules](#major-business-rules)
-    - [Permissions \& Access Control](#permissions--access-control)
-    - [Change Management](#change-management)
-      - [Versioning strategy](#versioning-strategy)
-      - [Release management](#release-management)
-  - [Infrastructure \& Deployment](#infrastructure--deployment)
-    - [Stateful](#stateful)
-    - [Stateless](#stateless)
-    - [CDK Commands](#cdk-commands)
-    - [Stacks](#stacks)
-  - [Development](#development)
-    - [Project Structure](#project-structure)
-    - [Setup](#setup)
-      - [Requirements](#requirements)
-      - [Install Dependencies](#install-dependencies)
-      - [First Steps](#first-steps)
-    - [Conventions](#conventions)
-    - [Linting \& Formatting](#linting--formatting)
-    - [Testing](#testing)
-  - [Glossary \& References](#glossary--references)
+- [Description](#description)
+  - [Summary](#summary)
+  - [Events Overview](#events-overview)
+  - [Consumed Events](#consumed-events)
+  - [Published Events](#published-events)
+  - [Ready Event Example](#ready-event-example)
+    - [Manually Validating Schemas,](#manually-validating-schemas)
+    - [Release management :construction:](#release-management-construction)
+- [Infrastructure \& Deployment :construction:](#infrastructure--deployment-construction)
+  - [Stateful](#stateful)
+  - [Stateless](#stateless)
+  - [CDK Commands](#cdk-commands)
+  - [Stacks :construction:](#stacks-construction)
+- [Development](#development)
+  - [Project Structure](#project-structure)
+  - [Setup](#setup)
+    - [Requirements](#requirements)
+    - [Install Dependencies](#install-dependencies)
+    - [First Steps](#first-steps)
+  - [Conventions](#conventions)
+  - [Linting \& Formatting](#linting--formatting)
+  - [Testing](#testing)
+- [Glossary \& References](#glossary--references)
 
 
-Service Description
+Description
 --------------------------------------------------------------------------------
 
-### Name & responsibility
+### Summary
 
-### Description
+This is the Oncoanalyser WGTS DNA Pipeline Management service,
+responsible for orchestrating the Oncoanalyser pipelines.
 
-### API Endpoints
+The pipeline runs on ICAv2 through Nextflow (version 24.10)
 
-This service provides a RESTful API following OpenAPI conventions.
-The Swagger documentation of the production endpoint is available here:
+### Events Overview
+
+**Ready Event**
+We listen to READY WRSC events where the workflow name is equal to `oncoanalyser-wgts-dna`
+
+**ICAv2 WES Analysis State Change**
+We then parse ICAv2 Analysis State Change events to update the state of the workflow in our service.
+
+![events-overview](docs/draw-io-exports/oncoanalyser-wgts-dna-pipeline.drawio.svg)
 
 
 ### Consumed Events
 
-| Name / DetailType | Source         | Schema Link       | Description         |
-|-------------------|----------------|-------------------|---------------------|
-| `SomeServiceStateChange` | `orcabus.someservice` | <schema link> | Announces service state changes |
+| Name / DetailType | Source         | Schema Link       | Description                           |
+|-------------------|----------------|-------------------|---------------------------------------|
+| `WorkflowRunStateChange` | `orcabus.any` | <schema link> | READY statechange // TODO             |
+ | `Icav2WesAnalysisStateChange` | `orcabus.icav2wes` | <schema link> | ICAv2 WES Analysis State Change event |
 
 ### Published Events
 
-| Name / DetailType | Source         | Schema Link       | Description         |
-|-------------------|----------------|-------------------|---------------------|
-| `TemplateStateChange` | `orcabus.templatemanager` | <schema link> | Announces Template data state changes |
+| Name / DetailType | Source                        | Schema Link       | Description           |
+|-------------------|-------------------------------|-------------------|-----------------------|
+| `WorkflowRunStateChange` | `orcabus.oncoanalyserwgtsdna` | <schema link> | Analysis state change |
 
 
-### (Internal) Data states & persistence model
+### Ready Event Example
 
-### Major Business Rules
+Ready event minimal example
 
-### Permissions & Access Control
+<details>
 
-### Change Management
+<summary>Click to expand</summary>
 
-#### Versioning strategy
+```json5
+{
+  "EventBusName": "OrcaBusMain",
+  "Source": "orcabus.manual",
+  "DetailType": "WorkflowRunStateChange",
+  "Detail": {
+    "status": "READY",
+    "timestamp": "2025-08-06T04:39:31Z",
+    "workflowName": "oncoanalyser-wgts-dna",
+    "workflowVersion": "2.1.0",
+    "workflowRunName": "umccr--automated--oncoanalyser-wgts-dna--2-1-0--20250606abcd6789",
+    "portalRunId": "20250606abcd6789", // pragma: allowlist secret
+    "linkedLibraries": [
+      {
+        "orcabusId": "lib.01JBB5Y3GAN479FC5MJG19HPJM",
+        "libraryId": "L2401541"
+      },
+      {
+        "orcabusId": "lib.01JBB5Y3DZ55KF4D5KVMJP7DSN",
+        "libraryId": "L2401540"
+      }
+    ],
+    "payload": {
+      "version": "2025.08.05",
+      "data": {
+        "tags": {
+          "libraryId": "L2401540",
+          "subjectId": "9689947",
+          "individualId": "SBJ05828",
+          "fastqRgidList": [
+            "GGACTTGG+CGTCTGCG.2.241024_A00130_0336_BHW7MVDSXC"
+          ],
+          "tumorLibraryId": "L2401541",
+          "tumorFastqRgidList": [
+            "AAGTCCAA+TACTCATA.2.241024_A00130_0336_BHW7MVDSXC"
+          ]
+        },
+        "inputs": {
+          "mode": "wgts",
+          "groupId": "SBJ05828",
+          "subjectId": "SBJ05828",
+          "tumorDnaBamUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401541__L2401540__hg38__linear__dragen_somatic_variant_calling/L2401541_tumor.bam",
+          "normalDnaBamUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401540__hg38__graph__dragen_germline_variant_calling/L2401540.bam",
+          "tumorDnaSampleId": "L2401541",
+          "normalDnaSampleId": "L2401540",
+          "genome": "GRCh38_umccr",
+          "genomeVersion": "38",
+          "genomeType": "alt",
+          "forceGenome": true,
+          // FIXME
+          "refDataHmfDataPath": "s3://path-to-reference-data/oncoanalyser/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.1.0--1/",
+          "genomes": {
+            // FIXME
+            "GRCh38_umccr": {
+              "fasta": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/GRCh38_full_analysis_set_plus_decoy_hla.fa",
+              "fai": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai",
+              "dict": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.dict",
+              "img": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/bwa_index_image/0.7.17-r1188/GRCh38_full_analysis_set_plus_decoy_hla.fa.img",
+              "bwamem2Index": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/bwa-mem2_index/2.2.1/",
+              "gridssIndex": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/gridss_index/2.13.2/",
+              "starIndex": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/star_index/gencode_38/2.7.3a/"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
 
-E.g. Manual tagging of git commits following Semantic Versioning (semver) guidelines.
+</details>
 
-#### Release management
+
+#### Manually Validating Schemas,
+
+We have generated JSON Schemas for the complete draft event which you can find in the [`./app/event-schemas`](app/event-schemas) directory.
+
+You can interactively check if your DRAFT or READY event matches the schema using the following links:
+
+- [Complete Draft Data Event Schema Page](https://www.jsonschemavalidator.net/s/ufMlzGzy)
+
+
+#### Release management :construction:
 
 The service employs a fully automated CI/CD pipeline that automatically builds and releases all changes to the `main` code branch.
 
 
-Infrastructure & Deployment
+Infrastructure & Deployment :construction:
 --------------------------------------------------------------------------------
 
 Short description with diagrams where appropriate.
@@ -114,7 +196,7 @@ pnpm cdk-stateless <command>
 pnpm cdk-stateful <command>
 ```
 
-### Stacks
+### Stacks :construction:
 
 This CDK project manages multiple stacks. The root stack (the only one that does not include `DeploymentPipeline` in its stack ID) is deployed in the toolchain account and sets up a CodePipeline for cross-environment deployments to `beta`, `gamma`, and `prod`.
 
