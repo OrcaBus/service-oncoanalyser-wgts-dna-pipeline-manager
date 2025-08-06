@@ -6,9 +6,6 @@ check:
 	@pnpm lint
 	@pre-commit run --all-files
 
-check-all: check
-	@(cd app && make check)
-
 fix:
 	@pnpm prettier-fix
 	@pnpm lint-fix

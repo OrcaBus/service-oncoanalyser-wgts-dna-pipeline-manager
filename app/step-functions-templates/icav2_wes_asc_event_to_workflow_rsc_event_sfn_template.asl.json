@@ -1,0 +1,88 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Save Inputs",
+  "States": {
+    "Save Inputs": {
+      "Type": "Pass",
+      "Next": "Convert ICAv2 WES event to WRSC Event",
+      "Assign": {
+        "icav2WesStateChangeEvent": "{% $states.input %}",
+        "name": "{% $states.input.name %}",
+        "inputs": "{% $states.input.inputs %}",
+        "tags": "{% $states.input.tags %}",
+        "engineParameters": "{% $states.input.engineParameters %}",
+        "status": "{% $states.input.status %}"
+      }
+    },
+    "Convert ICAv2 WES event to WRSC Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__convert_icav2_wes_to_wrsc_event_lambda_function_arn__}",
+        "Payload": {
+          "icav2WesStateChangeEvent": "{% $icav2WesStateChangeEvent %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Is new workflow manager deployed",
+      "Assign": {
+        "workflowRunStateChangeEvent": "{% $states.result.Payload.workflowRunStateChangeEvent %}",
+        "engineParameters": "{% /* Includes the cache uri */ $states.result.Payload.workflowRunStateChangeEvent.payload.data.engineParameters %}"
+      }
+    },
+    "Is new workflow manager deployed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Put WRSC Event",
+          "Condition": "{% /* ${__new_workflow_manager_is_deployed__} */ false %}"
+        }
+      ],
+      "Default": "Put WRSC Event Legacy"
+    },
+    "Put WRSC Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% /* Merge workflowRunStateChangeEvent with the status object */\n$merge(\n  $workflowRunStateChangeEvent,\n  {\n    \"status\": $status\n  }\n) %}",
+            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    },
+    "Put WRSC Event Legacy": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% /* Merge workflowRunStateChangeEvent with the status object */\n$merge([\n  $workflowRunStateChangeEvent,\n  {\n    \"status\": $status\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] |\n %}",
+            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}

@@ -1,24 +1,27 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { DeploymentStackPipeline } from '@orcabus/platform-cdk-constructs/deployment-stack-pipeline';
-import { getStackProps } from '../stage/config';
+import { REPO_NAME } from './constants';
+import { getStatefulStackProps } from '../stage/config';
+import { StatefulApplicationStack } from '../stage/stateful-application-stack';
 
 export class StatefulStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    new DeploymentStackPipeline(this, 'DeploymentPipeline', {
+    new DeploymentStackPipeline(this, 'StatefulOncoanalyserWgtsDnaPipeline', {
       githubBranch: 'main',
-      githubRepo: /** TODO: Replace with string. Example: */ 'service-microservice-manager',
-      stack: /** TODO: Replace with Stack (e.g. TheStateFULStack) */ undefined as unknown,
-      stackName: /** TODO: Replace with string. Example:  */ 'StatefulMicroserviceManager',
+      githubRepo: REPO_NAME,
+      stack: StatefulApplicationStack,
+      stackName: 'StatefulOncoanalyserWgtsDnaPipeline',
       stackConfig: {
-        beta: getStackProps('BETA'),
-        gamma: getStackProps('GAMMA'),
-        prod: getStackProps('PROD'),
+        beta: getStatefulStackProps('BETA'),
+        gamma: getStatefulStackProps('GAMMA'),
+        prod: getStatefulStackProps('PROD'),
       },
-      pipelineName: /** TODO: Replace with string. Example: */ 'OrcaBus-StatefulMicroservice',
+      pipelineName: 'OrcaBus-StatefulOncoanalyserWgtsDnaPipeline',
       cdkSynthCmd: ['pnpm install --frozen-lockfile --ignore-scripts', 'pnpm cdk-stateful synth'],
+      enableSlackNotification: false,
     });
   }
 }

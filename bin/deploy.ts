@@ -13,21 +13,13 @@ if (!deployMode) {
 }
 
 if (deployMode === 'stateless') {
-  new StatelessStack(
-    app,
-    /* TODO: Replace with string. Example: */ 'OrcaBusStateless{ServiceName}Stack',
-    {
-      env: TOOLCHAIN_ENVIRONMENT,
-    }
-  );
+  new StatelessStack(app, 'StatelessOncoanalyserWgtsDnaPipelineManager', {
+    env: TOOLCHAIN_ENVIRONMENT,
+  });
 } else if (deployMode === 'stateful') {
-  new StatefulStack(
-    app,
-    /* TODO: Replace with string. Example: */ 'OrcaBusStateful{ServiceName}Stack',
-    {
-      env: TOOLCHAIN_ENVIRONMENT,
-    }
-  );
+  new StatefulStack(app, 'StatefulOncoanalyserWgtsDnaPipeline', {
+    env: TOOLCHAIN_ENVIRONMENT,
+  });
 } else {
   throw new Error("Invalid 'deployMode` set in the context");
 }

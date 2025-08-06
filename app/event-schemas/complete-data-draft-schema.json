@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2012-12/schema",
+  "$defs": {
+    "s3Uri": {
+      "pattern": "^s3://[a-zA-Z0-9_-]*/[a-zA-Z0-9_./-]*"
+    },
+    "s3UriDirectory": {
+      "pattern": "^s3://[a-zA-Z0-9_-]*/[a-zA-Z0-9_./-]*/$"
+    },
+    "genomes": {
+      "type": "object",
+      "properties": {
+        "GRCh38_umccr": {
+          "type": "object",
+          "properties": {
+            "fasta": {
+              "$ref": "#/$defs/s3Uri",
+              "examples": [
+                "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/GRCh38_full_analysis_set_plus_decoy_hla.fa"
+              ]
+            },
+            "fai": {
+              "$ref": "#/$defs/s3Uri",
+              "examples": [
+                "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai"
+              ]
+            },
+            "dict": {
+              "$ref": "#/$defs/s3Uri",
+              "examples": [
+                "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.dict"
+              ]
+            },
+            "img": {
+              "$ref": "#/$defs/s3Uri",
+              "examples": [
+                "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/bwa_index_image/0.7.17-r1188/GRCh38_full_analysis_set_plus_decoy_hla.fa.img"
+              ]
+            },
+            "bwamem2Index": {
+              "$ref": "#/$defs/s3Uri",
+              "examples": [
+                "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/bwa-mem2_index/2.2.1/"
+              ]
+            },
+            "gridssIndex": {
+              "type": "string",
+              "examples": [
+                "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/gridss_index/2.13.2/"
+              ]
+            },
+            "starIndex": {
+              "type": "string",
+              "examples": [
+                "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/star_index/gencode_38/2.7.3a/"
+              ]
+            }
+          },
+          "required": ["fasta", "fai", "dict", "img", "bwamem2Index", "gridssIndex", "starIndex"]
+        }
+      },
+      "required": ["GRCh38_umccr"]
+    },
+    "tags": {
+      "type": "object",
+      "properties": {
+        "libraryId": {
+          "type": "string",
+          "examples": ["L2401540"]
+        },
+        "subjectId": {
+          "type": "string",
+          "examples": ["9689947"]
+        },
+        "individualId": {
+          "type": "string",
+          "examples": ["SBJ05828"]
+        },
+        "fastqRgidList": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "examples": ["GGACTTGG+CGTCTGCG.2.241024_A00130_0336_BHW7MVDSXC"]
+          },
+          "examples": [["GGACTTGG+CGTCTGCG.2.241024_A00130_0336_BHW7MVDSXC"]]
+        },
+        "tumorLibraryId": {
+          "type": "string",
+          "examples": ["L2401541"]
+        },
+        "tumorFastqRgidList": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "examples": ["AAGTCCAA+TACTCATA.2.241024_A00130_0336_BHW7MVDSXC"]
+          },
+          "examples": [["AAGTCCAA+TACTCATA.2.241024_A00130_0336_BHW7MVDSXC"]]
+        }
+      },
+      "required": [
+        "libraryId",
+        "subjectId",
+        "individualId",
+        "fastqRgidList",
+        "tumorLibraryId",
+        "tumorFastqRgidList"
+      ]
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "examples": ["wgts"]
+        },
+        "groupId": {
+          "type": "string",
+          "examples": ["SBJ05828"]
+        },
+        "subjectId": {
+          "type": "string",
+          "examples": ["SBJ05828"]
+        },
+        "tumorDnaBamUri": {
+          "type": "string",
+          "examples": [
+            "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401541__L2401540__hg38__linear__dragen_somatic_variant_calling/L2401541_tumor.bam"
+          ]
+        },
+        "normalDnaBamUri": {
+          "type": "string",
+          "examples": [
+            "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401540__hg38__graph__dragen_germline_variant_calling/L2401540.bam"
+          ]
+        },
+        "tumorDnaSampleId": {
+          "type": "string",
+          "examples": ["L2401541"]
+        },
+        "normalDnaSampleId": {
+          "type": "string",
+          "examples": ["L2401540"]
+        },
+        "genome": {
+          "type": "string",
+          "examples": ["GRCh38_umccr"]
+        },
+        "genome_version": {
+          "type": "string",
+          "examples": ["38"]
+        },
+        "genome_type": {
+          "type": "string",
+          "examples": ["alt"]
+        },
+        "force_genome": {
+          "type": "boolean",
+          "examples": [true]
+        },
+        "refDataHmfDataPath": {
+          "$ref": "#/$defs/s3UriDirectory",
+          "examples": [
+            "s3://path-to-reference-data/oncoanalyser/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.1.0--1/"
+          ]
+        },
+        "genomes": {
+          "$ref": "#/$defs/genomes"
+        }
+      },
+      "required": [
+        "mode",
+        "groupId",
+        "subjectId",
+        "tumorDnaBamUri",
+        "normalDnaBamUri",
+        "tumorDnaSampleId",
+        "normalDnaSampleId",
+        "genome",
+        "genomeVersion",
+        "genomeType",
+        "forceGenome",
+        "refDataHmfDataPath",
+        "genomes"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "tags": {
+      "$ref": "#/$defs/tags"
+    },
+    "inputs": {
+      "$ref": "#/$defs/inputs"
+    }
+  },
+  "required": ["tags", "inputs"]
+}

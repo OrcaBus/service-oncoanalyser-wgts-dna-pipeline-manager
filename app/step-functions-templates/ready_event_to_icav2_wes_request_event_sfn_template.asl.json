@@ -1,0 +1,57 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Save inputs",
+  "States": {
+    "Save inputs": {
+      "Type": "Pass",
+      "Next": "Convert Oncoanalyser WGTS DNA Ready Event to ICAv2 WES Event",
+      "Assign": {
+        "oncoanalyserWgtsDnaReadyEventDetail": "{% $states.input %}"
+      }
+    },
+    "Convert Oncoanalyser WGTS DNA Ready Event to ICAv2 WES Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__convert_ready_event_inputs_to_icav2_wes_event_inputs_lambda_function_arn__}",
+        "Payload": {
+          "inputs": "{% $oncoanalyserWgtsDnaReadyEventDetail.payload.data.inputs %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Push WES Event",
+      "Output": {
+        "icav2WesInputs": "{% $states.result.Payload.inputs %}"
+      }
+    },
+    "Push WES Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% {\n  \"name\": $oncoanalyserWgtsDnaReadyEventDetail.workflowRunName,\n  \"inputs\": $states.input.icav2WesInputs,\n  \"engineParameters\": $oncoanalyserWgtsDnaReadyEventDetail.payload.data.engineParameters,\n  \"tags\": (\n    [\n      $oncoanalyserWgtsDnaReadyEventDetail.payload.data.tags,\n      {\n        \"portalRunId\": $oncoanalyserWgtsDnaReadyEventDetail.portalRunId  \n      }\n    ]\n  )\n} %}",
+            "DetailType": "${__icav2_wes_request_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}
