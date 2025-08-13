@@ -32,19 +32,25 @@ export const WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP: Record<VersionTy
 };
 
 export const WORKFLOW_VERSION_TO_DEFAULT_HMF_REFERENCE_PATHS_MAP: Record<VersionType, string> = {
-  '2.0.0': 's3://path/to/ref-data/2.0.0', // FIXME
-  '2.1.0': 's3://path/to/ref-data/2.1.0', // FIXME
+  '2.0.0':
+    's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.0--3/',
+  '2.1.0':
+    's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.1.0--1/',
 };
 
 export const GENOMES_MAP: Record<NotInBuiltInHmfReferenceGenomesType, Genome> = {
   GRCh38_umccr: {
-    fasta: 's3://path/to/genome/GRCh38_umccr.fasta', // FIXME
-    fai: 's3://path/to/genome/GRCh38_umccr.fasta.fai', // FIXME,
-    dict: 's3://path/to/genome/GRCh38_umccr.fasta.dict', // FIXME,
-    img: 's3://path/to/genome/GRCh38_umccr.fasta.img', // FIXME,
-    bwamem2_index: 's3://path/to/genome/GRCh38_umccr.bwa-mem/', // FIXME,
-    gridss_index: 's3://path/to/genome/GRCh38_umccr.gridss-index/', // FIXME,
-    star_index: 's3://path/to/genome/GRCh38_umccr.star-index/', // FIXME,,
+    fasta:
+      's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/genomes/GRCh38_umccr/GRCh38_full_analysis_set_plus_decoy_hla.fa',
+    fai: 's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/genomes/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai',
+    dict: 's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/genomes/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.dict',
+    img: 's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/genomes/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.img',
+    bwamem2_index:
+      's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/genomes/GRCh38_umccr/bwa-mem2_index/2.2.1/',
+    gridss_index:
+      's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/genomes/GRCh38_umccr/gridss_index/2.13.2/',
+    star_index:
+      's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/genomes/GRCh38_umccr/star_index/gencode_38/2.7.3a/',
   },
 };
 

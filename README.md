@@ -32,7 +32,7 @@ Description
 ### Summary
 
 This is the Oncoanalyser WGTS DNA Pipeline Management service,
-responsible for orchestrating the Oncoanalyser pipelines.
+responsible for orchestrating the Oncoanalyser WGTS DNA analyses.
 
 The pipeline runs on ICAv2 through Nextflow (version 24.10)
 
@@ -49,15 +49,15 @@ We then parse ICAv2 Analysis State Change events to update the state of the work
 
 ### Consumed Events
 
-| Name / DetailType | Source         | Schema Link       | Description                           |
-|-------------------|----------------|-------------------|---------------------------------------|
-| `WorkflowRunStateChange` | `orcabus.any` | <schema link> | READY statechange // TODO             |
+| Name / DetailType             | Source             | Schema Link   | Description                           |
+|-------------------------------|--------------------|---------------|---------------------------------------|
+| `WorkflowRunStateChange`      | `orcabus.any`      | <schema link> | READY statechange // TODO             |
  | `Icav2WesAnalysisStateChange` | `orcabus.icav2wes` | <schema link> | ICAv2 WES Analysis State Change event |
 
 ### Published Events
 
-| Name / DetailType | Source                        | Schema Link       | Description           |
-|-------------------|-------------------------------|-------------------|-----------------------|
+| Name / DetailType        | Source                        | Schema Link   | Description           |
+|--------------------------|-------------------------------|---------------|-----------------------|
 | `WorkflowRunStateChange` | `orcabus.oncoanalyserwgtsdna` | <schema link> | Analysis state change |
 
 
