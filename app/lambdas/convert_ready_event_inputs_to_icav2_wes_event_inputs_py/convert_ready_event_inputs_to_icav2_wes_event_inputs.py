@@ -35,6 +35,7 @@ To generate an output like the following
 
 {
   "inputs": {
+        "monochrome_logs": True,
         "mode": "wgts",
         "samplesheet": [
             # Normal Bam
@@ -104,6 +105,7 @@ import pandas as pd
 
 # Globals
 DEFAULT_MODE = "wgts"
+DEFAULT_MONOCHROME_LOGS = True
 DEFAULT_GENOME = "GRCh38_hmf"
 DEFAULT_GENOME_VERSION = "38"
 DEFAULT_GENOME_TYPE = "no_alt"
@@ -171,6 +173,7 @@ def genome_keys_to_snake_case(genome: Dict[str, str]) -> Dict[str, str]:
     """
     return dict(map(
         lambda kv_iter_: (kv_iter_[0].replace("Index", "_index").lower(), kv_iter_[1]),
+        genome.items()
     ))
 
 
@@ -191,6 +194,7 @@ def handler(event, context):
             lambda kv_iter_: kv_iter_[1] is not None,
             {
                 "mode": ready_event_inputs.get("mode", DEFAULT_MODE),
+                "monochrome_logs": ready_event_inputs.get("monochromeLogs", DEFAULT_MONOCHROME_LOGS),
                 "samplesheet": generate_samplesheet_from_inputs(ready_event_inputs),
                 "genome": ready_event_inputs.get("genome", DEFAULT_GENOME),
                 "genome_version": ready_event_inputs.get("genomeVersion", DEFAULT_GENOME_VERSION),
@@ -198,8 +202,11 @@ def handler(event, context):
                 "force_genome": ready_event_inputs.get("forceGenome", None),
                 "ref_data_hmf_data_path": ready_event_inputs["refDataHmfDataPath"],
                 "genomes": (
-                    genome_keys_to_snake_case(ready_event_inputs.get("genomes", None))
-                    if ready_event_inputs.get("genomes")
+                    dict(map(
+                        lambda kv_iter_: (kv_iter_[0], genome_keys_to_snake_case(kv_iter_[1])),
+                        ready_event_inputs.get("genomes").items()
+                    ))
+                    if ready_event_inputs.get("genomes") is not None
                     else None
                 )
             }.items()
@@ -222,19 +229,19 @@ def handler(event, context):
 #                     "tumorDnaSampleId": "TUMOR_LIBRARY_ID",
 #                     "normalDnaSampleId": "NORMAL_LIBRARY_ID",
 #                     "genome": "GRCh38_umccr",
-#                     "genome_version": "38",
-#                     "genome_type": "alt",
-#                     "force_genome": True,
-#                     "ref_data_hmf_data_path": "s3://path-to-reference-data/oncoanalyser/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.1.0--1/",
+#                     "genomeVersion": "38",
+#                     "genomeType": "alt",
+#                     "forceGenome": True,
+#                     "refDataHmfDataPath": "s3://path-to-reference-data/oncoanalyser/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.1.0--1/",
 #                     "genomes": {
 #                         "GRCh38_umccr": {
 #                             "fasta": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/GRCh38_full_analysis_set_plus_decoy_hla.fa",
 #                             "fai": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai",
 #                             "dict": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.dict",
 #                             "img": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/bwa_index_image/0.7.17-r1188/GRCh38_full_analysis_set_plus_decoy_hla.fa.img",
-#                             "bwamem2_index": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/bwa-mem2_index/2.2.1/",
-#                             "gridss_index": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/gridss_index/2.13.2/",
-#                             "star_index": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/star_index/gencode_38/2.7.3a/"
+#                             "bwamem2Index": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/bwa-mem2_index/2.2.1/",
+#                             "gridssIndex": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/gridss_index/2.13.2/",
+#                             "starIndex": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/star_index/gencode_38/2.7.3a/"
 #                         }
 #                     }
 #                 }
