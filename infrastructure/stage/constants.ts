@@ -1,7 +1,7 @@
 /* Directory constants */
 import path from 'path';
 import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
-import { Genome, NotInBuiltInHmfReferenceGenomesType, VersionType } from './interfaces';
+import { Genome, NotInBuiltInHmfReferenceGenomesType, WorkflowVersionType } from './interfaces';
 
 export const APP_ROOT = path.join(__dirname, '../../app');
 export const LAMBDA_DIR = path.join(APP_ROOT, 'lambdas');
@@ -15,7 +15,7 @@ export const WORKFLOW_NAME = 'oncoanalyser-wgts-dna';
 // However, because this workflow has the same workflow name as the
 // existing production workflow, we need to filter on the payload version
 // to prevent the wrong service from being triggered
-export const DEFAULT_WORKFLOW_VERSION: VersionType = '2.1.0';
+export const DEFAULT_WORKFLOW_VERSION: WorkflowVersionType = '2.1.0';
 export const DEFAULT_PAYLOAD_VERSION = '2025.08.05';
 
 // Yet to implement draft events into this service
@@ -25,13 +25,19 @@ export const WORKFLOW_CACHE_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}
 
 /* We extend this every time we release a new version of the workflow */
 /* This is added into our SSM Parameter Store to allow us to map workflow versions to pipeline IDs */
-export const WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP: Record<VersionType, string> = {
+export const WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP: Record<
+  WorkflowVersionType,
+  string
+> = {
   // At the moment we are running manual deployments of the workflow
   '2.0.0': 'a64126df-d8b2-4ec0-99df-1154f44a74ef',
   '2.1.0': 'ab6e1d62-1b5a-4b24-86b8-81ccf4bdc7a2',
 };
 
-export const WORKFLOW_VERSION_TO_DEFAULT_HMF_REFERENCE_PATHS_MAP: Record<VersionType, string> = {
+export const WORKFLOW_VERSION_TO_DEFAULT_HMF_REFERENCE_PATHS_MAP: Record<
+  WorkflowVersionType,
+  string
+> = {
   '2.0.0':
     's3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/reference-data/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.0--3/',
   '2.1.0':
@@ -54,7 +60,7 @@ export const GENOMES_MAP: Record<NotInBuiltInHmfReferenceGenomesType, Genome> = 
   },
 };
 
-export const DEFAULT_WORKFLOW_INPUTS_BY_VERSION_MAP: Record<VersionType, object> = {
+export const DEFAULT_WORKFLOW_INPUTS_BY_VERSION_MAP: Record<WorkflowVersionType, object> = {
   '2.0.0': {
     mode: 'wgts',
     genome: 'GRCh38_umccr',
