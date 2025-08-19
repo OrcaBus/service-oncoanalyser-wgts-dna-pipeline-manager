@@ -24,7 +24,7 @@ export function buildSchema(scope: Construct, props: BuildSchemaProps): schemas.
   return new schemas.CfnSchema(scope, props.schemaName, {
     type: 'JSONSchemaDraft4',
     content: fs.readFileSync(schemaPath, 'utf-8'),
-    registryName: SCHEMA_REGISTRY_NAME,
+    registryName: <string>props.registry.registryName,
   });
 }
 
