@@ -43,7 +43,7 @@
       "Arguments": {
         "Entries": [
           {
-            "Detail": "{% {\n  \"name\": $oncoanalyserWgtsDnaReadyEventDetail.workflowRunName,\n  \"inputs\": $states.input.icav2WesInputs,\n  \"engineParameters\": $oncoanalyserWgtsDnaReadyEventDetail.payload.data.engineParameters,\n  \"tags\": (\n    [\n      $oncoanalyserWgtsDnaReadyEventDetail.payload.data.tags,\n      {\n        \"portalRunId\": $oncoanalyserWgtsDnaReadyEventDetail.portalRunId  \n      }\n    ]\n  )\n} %}",
+            "Detail": "{% {\n  \"name\": $oncoanalyserWgtsDnaReadyEventDetail.workflowRunName,\n  \"inputs\": $states.input.icav2WesInputs,\n  \"engineParameters\": $oncoanalyserWgtsDnaReadyEventDetail.payload.data.engineParameters,\n  \"tags\": (\n    [\n      $oncoanalyserWgtsDnaReadyEventDetail.payload.data.tags,\n      {\n        \"portalRunId\": $oncoanalyserWgtsDnaReadyEventDetail.portalRunId  \n      }\n    ] ~> $merge \n  )\n} %}",
             "DetailType": "${__icav2_wes_request_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__stack_source__}"
