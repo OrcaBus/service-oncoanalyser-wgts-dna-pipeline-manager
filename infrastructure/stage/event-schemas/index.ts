@@ -24,7 +24,7 @@ export function buildSchema(scope: Construct, props: BuildSchemaProps): schemas.
   return new schemas.CfnSchema(scope, props.schemaName, {
     type: 'JSONSchemaDraft4',
     content: fs.readFileSync(schemaPath, 'utf-8'),
-    registryName: <string>props.registry.registryName,
+    registryName: props.registry.attrRegistryName,
   });
 }
 
@@ -35,7 +35,7 @@ export function buildSchemasAndRegistry(scope: Construct) {
   // Add an ssm entry for the registry name
   new ssm.StringParameter(scope, `${SCHEMA_REGISTRY_NAME}-ssm`, {
     parameterName: path.join(SSM_SCHEMA_ROOT, 'registry'),
-    stringValue: <string>registryObj.registryName,
+    stringValue: registryObj.attrRegistryName,
   });
 
   // Iterate over the schemas directory and create a schema for each file
