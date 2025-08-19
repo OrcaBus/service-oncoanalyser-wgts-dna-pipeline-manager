@@ -18,7 +18,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Arguments": {
-        "FunctionName": "${__convert_icav2_wes_to_wrsc_event_lambda_function_arn__}",
+        "FunctionName": "${__convert_icav2_wes_event_to_wrsc_event_lambda_function_arn__}",
         "Payload": {
           "icav2WesStateChangeEvent": "{% $icav2WesStateChangeEvent %}"
         }
