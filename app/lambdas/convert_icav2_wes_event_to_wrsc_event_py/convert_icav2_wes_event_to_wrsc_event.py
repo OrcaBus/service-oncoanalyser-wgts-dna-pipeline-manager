@@ -47,7 +47,7 @@ def handler(event, context):
         workflow_run_inputs = latest_payload['data']['inputs']
         # We want to generate the following output dict
         outputs = {
-          "dnaOncoanalyserAnalysisRelPath": f"{workflow_run_inputs['groupId']}/",
+            "dnaOncoanalyserAnalysisRelPath": f"{workflow_run_inputs['groupId']}/",
         }
     else:
         outputs = None
