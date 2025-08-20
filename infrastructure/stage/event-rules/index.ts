@@ -61,6 +61,9 @@ function buildWorkflowManagerLegacyReadyEventPattern(): EventPattern {
     detail: {
       workflowName: [WORKFLOW_NAME],
       status: [READY_STATUS],
+      payload: {
+        version: [DEFAULT_PAYLOAD_VERSION],
+      },
     },
   };
 }
