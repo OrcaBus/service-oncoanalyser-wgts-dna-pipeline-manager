@@ -2,29 +2,28 @@ Oncoanalyser WGTS DNA Pipeline Orchestration Service
 ================================================================================
 
 - [Description](#description)
-  - [Summary](#summary)
-  - [Events Overview](#events-overview)
-  - [Consumed Events](#consumed-events)
-  - [Published Events](#published-events)
-  - [Ready Event Example](#ready-event-example)
-    - [Manually Validating Schemas,](#manually-validating-schemas)
-    - [Release management :construction:](#release-management-construction)
+    - [Summary](#summary)
+    - [Events Overview](#events-overview)
+    - [Consumed Events](#consumed-events)
+    - [Published Events](#published-events)
+    - [Ready Event Example](#ready-event-example)
+        - [Manually Validating Schemas,](#manually-validating-schemas)
+        - [Release management :construction:](#release-management-construction)
 - [Infrastructure \& Deployment :construction:](#infrastructure--deployment-construction)
-  - [Stateful](#stateful)
-  - [Stateless](#stateless)
-  - [CDK Commands](#cdk-commands)
-  - [Stacks :construction:](#stacks-construction)
+    - [Stateful](#stateful)
+    - [Stateless](#stateless)
+    - [CDK Commands](#cdk-commands)
+    - [Stacks :construction:](#stacks-construction)
 - [Development](#development)
-  - [Project Structure](#project-structure)
-  - [Setup](#setup)
-    - [Requirements](#requirements)
-    - [Install Dependencies](#install-dependencies)
-    - [First Steps](#first-steps)
-  - [Conventions](#conventions)
-  - [Linting \& Formatting](#linting--formatting)
-  - [Testing](#testing)
+    - [Project Structure](#project-structure)
+    - [Setup](#setup)
+        - [Requirements](#requirements)
+        - [Install Dependencies](#install-dependencies)
+        - [First Steps](#first-steps)
+    - [Conventions](#conventions)
+    - [Linting \& Formatting](#linting--formatting)
+    - [Testing](#testing)
 - [Glossary \& References](#glossary--references)
-
 
 Description
 --------------------------------------------------------------------------------
@@ -46,20 +45,18 @@ We then parse ICAv2 Analysis State Change events to update the state of the work
 
 ![events-overview](docs/draw-io-exports/oncoanalyser-wgts-dna-pipeline.drawio.svg)
 
-
 ### Consumed Events
 
 | Name / DetailType             | Source             | Schema Link   | Description                           |
 |-------------------------------|--------------------|---------------|---------------------------------------|
 | `WorkflowRunStateChange`      | `orcabus.any`      | <schema link> | READY statechange // TODO             |
- | `Icav2WesAnalysisStateChange` | `orcabus.icav2wes` | <schema link> | ICAv2 WES Analysis State Change event |
+| `Icav2WesAnalysisStateChange` | `orcabus.icav2wes` | <schema link> | ICAv2 WES Analysis State Change event |
 
 ### Published Events
 
 | Name / DetailType        | Source                        | Schema Link   | Description           |
 |--------------------------|-------------------------------|---------------|-----------------------|
 | `WorkflowRunStateChange` | `orcabus.oncoanalyserwgtsdna` | <schema link> | Analysis state change |
-
 
 ### Ready Event Example
 
@@ -76,62 +73,70 @@ Ready event minimal example
   "DetailType": "WorkflowRunStateChange",
   "Detail": {
     "status": "READY",
-    "timestamp": "2025-08-06T04:39:31Z",
-    "workflowName": "oncoanalyser-wgts-dna",
-    "workflowVersion": "2.1.0",
-    "workflowRunName": "umccr--automated--oncoanalyser-wgts-dna--2-1-0--20250606abcd6789",
-    "portalRunId": "20250606abcd6789", // pragma: allowlist secret
-    "linkedLibraries": [
+    "timestamp": "2025-08-29T03:23:04Z",
+    "workflow": {
+      "name": "oncoanalyser-wgts-dna",
+      "version": "2.1.0"
+    },
+    "workflowRunName": "umccr--automated--oncoanalyser-wgts-dna--2-1-0--20250829d165aaa2",
+    "portalRunId": "20250829d165aaa2",
+    "libraries": [
       {
-        "orcabusId": "lib.01JBB5Y3GAN479FC5MJG19HPJM",
-        "libraryId": "L2401541"
+        "orcabusId": "lib.01JBMVH3QN2PNC949C5TS9REQV",
+        "libraryId": "L2300943"
       },
       {
-        "orcabusId": "lib.01JBB5Y3DZ55KF4D5KVMJP7DSN",
-        "libraryId": "L2401540"
+        "orcabusId": "lib.01JBMVH3Z9K05CJAZ8FQ4V2ZZH",
+        "libraryId": "L2300950"
       }
     ],
     "payload": {
       "version": "2025.08.05",
       "data": {
         "tags": {
-          "libraryId": "L2401540",
-          "subjectId": "9689947",
-          "individualId": "SBJ05828",
+          "libraryId": "L2300950",
+          "subjectId": "HCC1395",
+          "individualId": "SBJ00480",
           "fastqRgidList": [
-            "GGACTTGG+CGTCTGCG.2.241024_A00130_0336_BHW7MVDSXC"
+            "GGCATTCT+CAAGCTAG.2.230629_A01052_0154_BH7WF5DSX7"
           ],
-          "tumorLibraryId": "L2401541",
+          "tumorLibraryId": "L2300943",
           "tumorFastqRgidList": [
-            "AAGTCCAA+TACTCATA.2.241024_A00130_0336_BHW7MVDSXC"
+            "ACTAAGAT+CCGCGGTT.4.230602_A00130_0258_BH55TMDSX7",
+            "ACTAAGAT+CCGCGGTT.3.230602_A00130_0258_BH55TMDSX7"
           ]
         },
         "inputs": {
           "mode": "wgts",
-          "groupId": "SBJ05828",
-          "subjectId": "SBJ05828",
-          "tumorDnaBamUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401541__L2401540__hg38__linear__dragen_somatic_variant_calling/L2401541_tumor.bam",
-          "normalDnaBamUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401540__hg38__graph__dragen_germline_variant_calling/L2401540.bam",
-          "tumorDnaSampleId": "L2401541",
-          "normalDnaSampleId": "L2401540",
+          "groupId": "L2300943__L2300950",
+          "subjectId": "L2300943__L2300950",
+          "tumorDnaBamUri": "s3://test-data-503977275616-ap-southeast-2/testdata/analysis/production/dragen-wgts-dna/4.4.4/SEQC-II/01k3n0kn3nvsdtne265p0800qp/20250822e11a8540/L2300943__L2300950__hg38__linear__dragen_wgts_dna_somatic_variant_calling/L2300943_tumor.bam",
+          "normalDnaBamUri": "s3://test-data-503977275616-ap-southeast-2/testdata/analysis/production/dragen-wgts-dna/4.4.4/SEQC-II/01k3n0kn3nvsdtne265p0800qp/20250822e11a8540/L2300950__hg38__graph__dragen_wgts_dna_germline_variant_calling/L2300950.bam",
+          "tumorDnaSampleId": "L2300943",
+          "normalDnaSampleId": "L2300950",
           "genome": "GRCh38_umccr",
           "genomeVersion": "38",
           "genomeType": "alt",
           "forceGenome": true,
-          // FIXME
-          "refDataHmfDataPath": "s3://path-to-reference-data/oncoanalyser/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.1.0--1/",
+          "refDataHmfDataPath": "s3://reference-data-503977275616-ap-southeast-2/refdata/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.1.0--1/",
           "genomes": {
-            // FIXME
             "GRCh38_umccr": {
-              "fasta": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/GRCh38_full_analysis_set_plus_decoy_hla.fa",
-              "fai": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai",
-              "dict": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.dict",
-              "img": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/bwa_index_image/0.7.17-r1188/GRCh38_full_analysis_set_plus_decoy_hla.fa.img",
-              "bwamem2Index": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/bwa-mem2_index/2.2.1/",
-              "gridssIndex": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/gridss_index/2.13.2/",
-              "starIndex": "s3://path-to-reference-data/oncoanalyser/GRCh38_umccr/star_index/gencode_38/2.7.3a/"
+              "fasta": "s3://reference-data-503977275616-ap-southeast-2/refdata/genomes/GRCh38_umccr/GRCh38_full_analysis_set_plus_decoy_hla.fa",
+              "fai": "s3://reference-data-503977275616-ap-southeast-2/refdata/genomes/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai",
+              "dict": "s3://reference-data-503977275616-ap-southeast-2/refdata/genomes/GRCh38_umccr/samtools_index/1.16/GRCh38_full_analysis_set_plus_decoy_hla.fa.dict",
+              "img": "s3://reference-data-503977275616-ap-southeast-2/refdata/genomes/GRCh38_umccr/bwa_index_image/0.7.17-r1188/GRCh38_full_analysis_set_plus_decoy_hla.fa.img",
+              "bwamem2Index": "s3://reference-data-503977275616-ap-southeast-2/refdata/genomes/GRCh38_umccr/bwa-mem2_index/2.2.1/",
+              "gridssIndex": "s3://reference-data-503977275616-ap-southeast-2/refdata/genomes/GRCh38_umccr/gridss_index/2.13.2/",
+              "starIndex": "s3://reference-data-503977275616-ap-southeast-2/refdata/genomes/GRCh38_umccr/star_index/gencode_38/2.7.3a/"
             }
           }
+        },
+        "engineParameters": {
+          "projectId": "ea19a3f5-ec7c-4940-a474-c31cd91dbad4",
+          "pipelineId": "ab6e1d62-1b5a-4b24-86b8-81ccf4bdc7a2",
+          "outputUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/oncoanalyser-wgts-dna/20250829d165aaa2/",
+          "logsUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/logs/oncoanalyser-wgts-dna/20250829d165aaa2/",
+          "cacheUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/cache/oncoanalyser-wgts-dna/20250829d165aaa2/"
         }
       }
     }
@@ -141,19 +146,19 @@ Ready event minimal example
 
 </details>
 
-
 #### Manually Validating Schemas,
 
-We have generated JSON Schemas for the complete draft event which you can find in the [`./app/event-schemas`](app/event-schemas) directory.
+We have generated JSON Schemas for the complete draft event which you can find in the [
+`./app/event-schemas`](app/event-schemas) directory.
 
 You can interactively check if your DRAFT or READY event matches the schema using the following links:
 
 - [Complete Draft Data Event Schema Page](https://www.jsonschemavalidator.net/s/ufMlzGzy)
 
-
 #### Release management :construction:
 
-The service employs a fully automated CI/CD pipeline that automatically builds and releases all changes to the `main` code branch.
+The service employs a fully automated CI/CD pipeline that automatically builds and releases all changes to the `main`
+code branch.
 
 
 Infrastructure & Deployment :construction:
@@ -162,8 +167,8 @@ Infrastructure & Deployment :construction:
 Short description with diagrams where appropriate.
 Deployment settings / configuration (e.g. CodePipeline(s) / automated builds).
 
-Infrastructure and deployment are managed via CDK. This template provides two types of CDK entry points: `cdk-stateless` and `cdk-stateful`.
-
+Infrastructure and deployment are managed via CDK. This template provides two types of CDK entry points: `cdk-stateless`
+and `cdk-stateful`.
 
 ### Stateful
 
@@ -173,18 +178,21 @@ Infrastructure and deployment are managed via CDK. This template provides two ty
 - ...
 
 ### Stateless
+
 - Lambdas
 - StepFunctions
-
 
 ### CDK Commands
 
 You can access CDK commands using the `pnpm` wrapper script.
 
-- **`cdk-stateless`**: Used to deploy stacks containing stateless resources (e.g., AWS Lambda), which can be easily redeployed without side effects.
-- **`cdk-stateful`**: Used to deploy stacks containing stateful resources (e.g., AWS DynamoDB, AWS RDS), where redeployment may not be ideal due to potential side effects.
+- **`cdk-stateless`**: Used to deploy stacks containing stateless resources (e.g., AWS Lambda), which can be easily
+  redeployed without side effects.
+- **`cdk-stateful`**: Used to deploy stacks containing stateful resources (e.g., AWS DynamoDB, AWS RDS), where
+  redeployment may not be ideal due to potential side effects.
 
-The type of stack to deploy is determined by the context set in the `./bin/deploy.ts` file. This ensures the correct stack is executed based on the provided context.
+The type of stack to deploy is determined by the context set in the `./bin/deploy.ts` file. This ensures the correct
+stack is executed based on the provided context.
 
 For example:
 
@@ -198,7 +206,9 @@ pnpm cdk-stateful <command>
 
 ### Stacks :construction:
 
-This CDK project manages multiple stacks. The root stack (the only one that does not include `DeploymentPipeline` in its stack ID) is deployed in the toolchain account and sets up a CodePipeline for cross-environment deployments to `beta`, `gamma`, and `prod`.
+This CDK project manages multiple stacks. The root stack (the only one that does not include `DeploymentPipeline` in its
+stack ID) is deployed in the toolchain account and sets up a CodePipeline for cross-environment deployments to `beta`,
+`gamma`, and `prod`.
 
 To list all available stacks, run:
 
@@ -215,7 +225,6 @@ OrcaBusStatelessServiceStack/DeploymentPipeline/OrcaBusGamma/DeployStack (OrcaBu
 OrcaBusStatelessServiceStack/DeploymentPipeline/OrcaBusProd/DeployStack (OrcaBusProd-DeployStack)
 ```
 
-
 Development
 --------------------------------------------------------------------------------
 
@@ -225,20 +234,27 @@ The root of the project is an AWS CDK project where the main application logic l
 
 The project is organized into the following key directories:
 
-- **`./app`**: Contains the main application logic. You can open the code editor directly in this folder, and the application should run independently.
+- **`./app`**: Contains the main application logic. You can open the code editor directly in this folder, and the
+  application should run independently.
 
-- **`./bin/deploy.ts`**: Serves as the entry point of the application. It initializes two root stacks: `stateless` and `stateful`. You can remove one of these if your service does not require it.
+- **`./bin/deploy.ts`**: Serves as the entry point of the application. It initializes two root stacks: `stateless` and
+  `stateful`. You can remove one of these if your service does not require it.
 
 - **`./infrastructure`**: Contains the infrastructure code for the project:
-  - **`./infrastructure/toolchain`**: Includes stacks for the stateless and stateful resources deployed in the toolchain account. These stacks primarily set up the CodePipeline for cross-environment deployments.
-  - **`./infrastructure/stage`**: Defines the stage stacks for different environments:
-    - **`./infrastructure/stage/config.ts`**: Contains environment-specific configuration files (e.g., `beta`, `gamma`, `prod`).
-    - **`./infrastructure/stage/stack.ts`**: The CDK stack entry point for provisioning resources required by the application in `./app`.
+    - **`./infrastructure/toolchain`**: Includes stacks for the stateless and stateful resources deployed in the
+      toolchain account. These stacks primarily set up the CodePipeline for cross-environment deployments.
+    - **`./infrastructure/stage`**: Defines the stage stacks for different environments:
+        - **`./infrastructure/stage/config.ts`**: Contains environment-specific configuration files (e.g., `beta`,
+          `gamma`, `prod`).
+        - **`./infrastructure/stage/stack.ts`**: The CDK stack entry point for provisioning resources required by the
+          application in `./app`.
 
-- **`.github/workflows/pr-tests.yml`**: Configures GitHub Actions to run tests for `make check` (linting and code style), tests defined in `./test`, and `make test` for the `./app` directory. Modify this file as needed to ensure the tests are properly configured for your environment.
+- **`.github/workflows/pr-tests.yml`**: Configures GitHub Actions to run tests for `make check` (linting and code
+  style), tests defined in `./test`, and `make test` for the `./app` directory. Modify this file as needed to ensure the
+  tests are properly configured for your environment.
 
-- **`./test`**: Contains tests for CDK code compliance against `cdk-nag`. You should modify these test files to match the resources defined in the `./infrastructure` folder.
-
+- **`./test`**: Contains tests for CDK code compliance against `cdk-nag`. You should modify these test files to match
+  the resources defined in the `./infrastructure` folder.
 
 ### Setup
 
@@ -266,17 +282,18 @@ make install
 
 #### First Steps
 
-Before using this template, search for all instances of `TODO:` comments in the codebase and update them as appropriate for your service. This includes replacing placeholder values (such as stack names).
-
+Before using this template, search for all instances of `TODO:` comments in the codebase and update them as appropriate
+for your service. This includes replacing placeholder values (such as stack names).
 
 ### Conventions
 
 ### Linting & Formatting
 
-Automated checks are enforces via pre-commit hooks, ensuring only checked code is committed. For details consult the `.pre-commit-config.yaml` file.
+Automated checks are enforces via pre-commit hooks, ensuring only checked code is committed. For details consult the
+`.pre-commit-config.yaml` file.
 
-Manual, on-demand checking is also available via `make` targets (see below). For details consult the `Makefile` in the root of the project.
-
+Manual, on-demand checking is also available via `make` targets (see below). For details consult the `Makefile` in the
+root of the project.
 
 To run linting and formatting checks on the root project, use:
 
@@ -292,8 +309,8 @@ make fix
 
 ### Testing
 
-
-Unit tests are available for most of the business logic. Test code is hosted alongside business in `/tests/` directories.
+Unit tests are available for most of the business logic. Test code is hosted alongside business in `/tests/`
+directories.
 
 ```sh
 make test
@@ -302,11 +319,12 @@ make test
 Glossary & References
 --------------------------------------------------------------------------------
 
-For general terms and expressions used across OrcaBus services, please see the platform [documentation](https://github.com/OrcaBus/wiki/blob/main/orcabus-platform/README.md#glossary--references).
+For general terms and expressions used across OrcaBus services, please see the
+platform [documentation](https://github.com/OrcaBus/wiki/blob/main/orcabus-platform/README.md#glossary--references).
 
 Service specific terms:
 
-| Term      | Description                                      |
-|-----------|--------------------------------------------------|
-| Foo | ... |
-| Bar | ... |
+| Term | Description |
+|------|-------------|
+| Foo  | ...         |
+| Bar  | ...         |
