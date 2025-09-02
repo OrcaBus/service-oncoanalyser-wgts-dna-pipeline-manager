@@ -4,10 +4,12 @@ import { EventPattern, IEventBus, Rule } from 'aws-cdk-lib/aws-events';
  * EventBridge Rules Interfaces
  */
 export type EventBridgeRuleName =
-  // Pre-draft
+  // Dragen Succeeded
+  | 'dragenWgtsDnaSucceededEventLegacy'
+  | 'dragenWgtsDnaSucceededEvent'
   // Yet to be implemented
-  // | 'wrscDraftLegacy'
-  // | 'wrscDraft'
+  | 'wrscDraftLegacy'
+  | 'wrscDraft'
   // Pre-ready
   | 'wrscReadyLegacy'
   | 'wrscReady'
@@ -15,10 +17,12 @@ export type EventBridgeRuleName =
   | 'icav2WesAnalysisStateChange';
 
 export const eventBridgeRuleNameList: EventBridgeRuleName[] = [
-  // Pre-draft
+  // Dragen Succeeded event
+  'dragenWgtsDnaSucceededEventLegacy',
+  'dragenWgtsDnaSucceededEvent',
   // Yet to be implemented
-  // 'wrscDraftLegacy',
-  // 'wrscDraft',
+  'wrscDraftLegacy',
+  'wrscDraft',
   // Pre-ready
   'wrscReadyLegacy',
   'wrscReady',
