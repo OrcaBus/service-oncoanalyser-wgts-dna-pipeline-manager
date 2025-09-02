@@ -2,17 +2,30 @@ import { IEventBus } from 'aws-cdk-lib/aws-events';
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 
 import { LambdaName, LambdaObject } from '../lambda/interfaces';
+import { SsmParameterPaths } from '../ssm/interfaces';
 
 /**
  * Step Function Interfaces
  */
 export type StateMachineName =
+  // Glue code
+  | 'glueSucceededEventsToDraftUpdate'
+  // Draft populator
+  | 'populateDraftData'
+  // Validate draft to ready
+  | 'validateDraftToReady'
   // Ready-to-Submitted
   | 'readyEventToIcav2WesRequestEvent'
   // Post-submission event conversion
   | 'icav2WesAscEventToWorkflowRscEvent';
 
 export const stateMachineNameList: StateMachineName[] = [
+  // Glue code
+  'glueSucceededEventsToDraftUpdate',
+  // Draft populator
+  'populateDraftData',
+  // Validate draft to ready
+  'validateDraftToReady',
   // Ready-to-Submitted
   'readyEventToIcav2WesRequestEvent',
   // Post-submission event conversion
@@ -23,6 +36,8 @@ export const stateMachineNameList: StateMachineName[] = [
 export interface StepFunctionRequirements {
   // Event stuff
   needsEventPutPermission?: boolean;
+  // SSM Stuff
+  needsSsmParameterStoreAccess?: boolean;
 }
 
 export interface StepFunctionInput {
@@ -33,6 +48,7 @@ export interface BuildStepFunctionProps extends StepFunctionInput {
   lambdaObjects: LambdaObject[];
   eventBus: IEventBus;
   isNewWorkflowManagerDeployed: boolean;
+  ssmParameterPaths: SsmParameterPaths;
 }
 
 export interface StepFunctionObject extends StepFunctionInput {
@@ -44,15 +60,46 @@ export type WireUpPermissionsProps = BuildStepFunctionProps & StepFunctionObject
 export type BuildStepFunctionsProps = Omit<BuildStepFunctionProps, 'stateMachineName'>;
 
 export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunctionRequirements> = {
+  // Glue code
+  glueSucceededEventsToDraftUpdate: {
+    needsEventPutPermission: true,
+  },
+  // Draft populator
+  populateDraftData: {
+    needsEventPutPermission: true,
+    needsSsmParameterStoreAccess: true,
+  },
+  // Validate draft to ready
+  validateDraftToReady: {
+    needsEventPutPermission: true,
+  },
+  // Ready-to-Submitted
   readyEventToIcav2WesRequestEvent: {
     needsEventPutPermission: true,
   },
+  // Post-submission event conversion
   icav2WesAscEventToWorkflowRscEvent: {
     needsEventPutPermission: true,
   },
 };
 
 export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = {
+  glueSucceededEventsToDraftUpdate: [
+    'comparePayload',
+    'getBamFromLatestDragenWorkflow',
+    'generateWruEventObjectWithMergedData',
+    'getLatestPayloadFromPortalRunId',
+  ],
+  populateDraftData: [
+    'comparePayload',
+    'getBamFromLatestDragenWorkflow',
+    'getFastqIdListFromRgidList',
+    'getFastqRgidsFromLibraryId',
+    'getLibraries',
+    'getMetadataTags',
+    'validateDraftCompleteSchema',
+  ],
+  validateDraftToReady: ['validateDraftCompleteSchema'],
   readyEventToIcav2WesRequestEvent: ['convertReadyEventInputsToIcav2WesEventInputs'],
   icav2WesAscEventToWorkflowRscEvent: ['convertIcav2WesEventToWrscEvent'],
 };

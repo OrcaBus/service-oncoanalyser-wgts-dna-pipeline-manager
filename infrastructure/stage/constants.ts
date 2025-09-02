@@ -64,16 +64,16 @@ export const DEFAULT_WORKFLOW_INPUTS_BY_VERSION_MAP: Record<WorkflowVersionType,
   '2.0.0': {
     mode: 'wgts',
     genome: 'GRCh38_umccr',
-    genome_version: '38',
-    genome_type: 'alt',
-    force_genome: true,
+    genomeVersion: '38',
+    genomeType: 'alt',
+    forceGenome: true,
   },
   '2.1.0': {
     mode: 'wgts',
     genome: 'GRCh38_umccr',
-    genome_version: '38',
-    genome_type: 'alt',
-    force_genome: true,
+    genomeVersion: '38',
+    genomeType: 'alt',
+    forceGenome: true,
   },
 };
 
@@ -123,19 +123,18 @@ export const SSM_PARAMETER_PATH_PREFIX_GENOMES = path.join(SSM_PARAMETER_PATH_PR
 export const EVENT_BUS_NAME = 'OrcaBusMain';
 export const EVENT_SOURCE = 'orcabus.oncoanalyserwgtsdna';
 export const WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE = 'WorkflowRunStateChange';
+export const WORKFLOW_RUN_UPDATE_DETAIL_TYPE = 'WorkflowRunUpdate';
 export const ICAV2_WES_REQUEST_DETAIL_TYPE = 'Icav2WesRequest';
 export const ICAV2_WES_STATE_CHANGE_DETAIL_TYPE = 'Icav2WesAnalysisStateChange';
 
 export const WORKFLOW_MANAGER_EVENT_SOURCE = 'orcabus.workflowmanager';
 export const ICAV2_WES_EVENT_SOURCE = 'orcabus.icav2wesmanager';
-
-// Yet to implement draft events into this service
-// export const FASTQ_SYNC_DETAIL_TYPE = 'FastqSync';
+export const DRAGEN_WGTS_DNA_WORKFLOW_NAME = 'dragen-wgts-dna';
 
 /* Event rule constants */
-// Yet to implement draft events into this service
-// export const DRAFT_STATUS = 'DRAFT';
+export const DRAFT_STATUS = 'DRAFT';
 export const READY_STATUS = 'READY';
+export const SUCCEEDED_STATUS = 'SUCCEEDED';
 
 /* Schema constants */
 // Yet to implement draft events into this service

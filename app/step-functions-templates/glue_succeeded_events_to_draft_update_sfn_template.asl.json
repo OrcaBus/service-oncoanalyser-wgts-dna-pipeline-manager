@@ -1,0 +1,313 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Set input vars",
+  "States": {
+    "Set input vars": {
+      "Type": "Pass",
+      "Next": "Get oncoanalyser wgts dna draft",
+      "Assign": {
+        "dragenWgtsDnaPortalRunId": "{% $states.input.dragenWgtsDnaPortalRunId ? $states.input.dragenWgtsDnaPortalRunId : null %}"
+      }
+    },
+    "Get oncoanalyser wgts dna draft": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__get_oncoanalyser_wgts_dna_draft_workflow_from_dragen_succeeded_workflow_lambda_function_arn__}",
+        "Payload": {
+          "dragenWgtsDnaSucceededPortalRunId": "{% $dragenWgtsDnaPortalRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Did we get a oncoanalyser wgts dna draft object",
+      "Assign": {
+        "draftWorkflowRunObject": "{% $states.result.Payload.oncoanalyserWgtsDnaDraftWorkflowRunObject ? $states.result.Payload.oncoanalyserWgtsDnaDraftWorkflowRunObject : null %}"
+      }
+    },
+    "Did we get a oncoanalyser wgts dna draft object": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Get latest payload from oncoanalyser draft portal run id",
+          "Condition": "{% $draftWorkflowRunObject %}",
+          "Comment": "Found draft"
+        }
+      ],
+      "Default": "Nothing to do"
+    },
+    "Get latest payload from oncoanalyser draft portal run id": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__get_latest_payload_from_portal_run_id_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $draftWorkflowRunObject.portalRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Latest payload contains bams",
+      "Assign": {
+        "draftPayload": "{% (\n  $states.result.Payload.payload ? \n  $states.result.Payload.payload : {\n    \"version\": \"${__default_payload_version__}\"\n  }\n) %}",
+        "draftData": "{% $states.result.Payload.payload.data ? $states.result.Payload.payload.data : {} %}",
+        "draftEngineParameters": "{% $states.result.Payload.payload.data.engineParameters ? \n$states.result.Payload.payload.data.engineParameters : {} %}",
+        "draftTags": "{% $states.result.Payload.payload.data.tags ? $states.result.Payload.payload.data.tags : {} %}",
+        "draftInputs": "{% $states.result.Payload.payload.inputs ? $states.result.Payload.payload.inputs : {} %}"
+      }
+    },
+    "Latest payload contains bams": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Skip adding bams to inputs",
+          "Condition": "{% ($draftInputs.tumorDnaBamUri ? true : false) or ($draftInputs.normalDnaBamUri ? true : false) %}",
+          "Comment": "Already contains bam inputs"
+        }
+      ],
+      "Default": "Get dragen bams"
+    },
+    "Skip adding bams to inputs": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Nothing to do": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Get dragen bams": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Get normal bam from latest dragen workflow",
+          "States": {
+            "Get normal bam from latest dragen workflow": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Arguments": {
+                "FunctionName": "${__get_bam_from_latest_dragen_workflow_lambda_function_arn__}",
+                "Payload": {
+                  "portalRunId": "{% $dragenWgtsDnaPortalRunId %}",
+                  "phenotype": "NORMAL"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true,
+              "Output": {
+                "normalDnaBamUri": "{% $states.result.Payload.bamUri %}"
+              }
+            }
+          }
+        },
+        {
+          "StartAt": "Has tumor library id",
+          "States": {
+            "Has tumor library id": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "Get tumor bam from latest dragen workflow",
+                  "Condition": "{% $draftTags.tumorLibraryId ? true : false %}",
+                  "Comment": "Has tumor library id"
+                }
+              ],
+              "Default": "Skip tumor bam"
+            },
+            "Get tumor bam from latest dragen workflow": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": {
+                "tumorDnaBamUri": "{% $states.result.Payload.bamUri %}"
+              },
+              "Arguments": {
+                "FunctionName": "${__get_bam_from_latest_dragen_workflow_lambda_function_arn__}",
+                "Payload": {
+                  "portalRunId": "{% $dragenWgtsDnaPortalRunId %}",
+                  "phenotype": "TUMOR"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true
+            },
+            "Skip tumor bam": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        }
+      ],
+      "Output": {
+        "normalDnaBamUri": "{% $states.result[0].normalDnaBamUri %}",
+        "tumorDnaBamUri": "{% $states.result[1].tumorDnaBamUri ? $states.result[1].tumorDnaBamUri : null %}"
+      },
+      "Next": "Generate WRU event object with merged data"
+    },
+    "Generate WRU event object with merged data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
+        "Payload": {
+          "dragenTumorDnaBamUri": "{% $states.input.tumorDnaBamUri %}",
+          "dragenNormalDnaBamUri": "{% $states.input.normalDnaBamUri %}",
+          "oncoanalyserWgtsDnaDraftWorkflowRunObject": "{% $draftWorkflowRunObject %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Compare payload",
+      "Assign": {
+        "workflowRunUpdate": "{% $states.result.oncoanalyserWgtsDnaDraftWorkflowRunUpdate %}"
+      }
+    },
+    "Compare payload": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__compare_payload_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $draftWorkflowRunObject.portalRunId %}",
+          "newPayload": "{% $workflowRunUpdate.payload %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Has payload changed",
+      "Output": {
+        "hasChanged": "{% $states.result.Payload.hasChanged %}"
+      }
+    },
+    "Has payload changed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "New workflow manager is deployed",
+          "Condition": "{% $states.input.hasChanged %}",
+          "Comment": "Payload has changed"
+        }
+      ],
+      "Default": "Skip event"
+    },
+    "Skip event": {
+      "Type": "Pass",
+      "End": true
+    },
+    "New workflow manager is deployed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
+          "Next": "Put WRU Update (new)",
+          "Comment": "New workflow manager deployed"
+        }
+      ],
+      "Default": "Put WRSC Draft Event (legacy)"
+    },
+    "Put WRU Update (new)": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents.waitForTaskToken",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% [\n  $workflowRunUpdate,\n  {\n    \"timestamp\": $now()\n  }\n] ~> $merge %}",
+            "DetailType": "${__workflow_run_update_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    },
+    "Put WRSC Draft Event (legacy)": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents.waitForTaskToken",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $merge([\n  $workflowRunUpdate,\n  {\n    \"timestamp\": $now()\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
+            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}

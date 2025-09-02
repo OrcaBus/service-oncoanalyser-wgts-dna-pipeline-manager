@@ -32,6 +32,7 @@ export class StatelessApplicationStack extends cdk.Stack {
       lambdaObjects: lambdas,
       eventBus: orcabusMainEventBus,
       isNewWorkflowManagerDeployed: props.isNewWorkflowManagerDeployed,
+      ssmParameterPaths: props.ssmParameterPaths,
     });
 
     // Add event rules

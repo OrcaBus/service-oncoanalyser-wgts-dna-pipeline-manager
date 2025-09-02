@@ -76,6 +76,12 @@ export function buildSsmParameters(scope: Construct, props: BuildSsmParameterPro
     stringValue: props.ssmParameterValues.outputPrefix,
   });
 
+  // Cache prefix
+  new ssm.StringParameter(scope, 'cache-prefix', {
+    parameterName: props.ssmParameterPaths.cachePrefix,
+    stringValue: props.ssmParameterValues.cachePrefix,
+  });
+
   /**
    * Reference Parameters
    */
