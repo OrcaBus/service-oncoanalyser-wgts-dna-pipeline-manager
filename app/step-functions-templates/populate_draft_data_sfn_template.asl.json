@@ -249,7 +249,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "logsUri": "{% $draftEngineParameters.cacheUr %}"
+                "cacheUri": "{% $draftEngineParameters.cacheUri %}"
               }
             },
             "Get default cache uri prefix": {

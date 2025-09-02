@@ -166,8 +166,9 @@ def handler(event, context):
         }
 
     else:
+        bam_file_obj = get_bam_from_dragen_workflow(portal_run_id, phenotype=phenotype)
         return {
-            "bamUri": get_bam_from_dragen_workflow(portal_run_id, phenotype=phenotype)
+            "bamUri": f"s3://{bam_file_obj['bucket']}/{bam_file_obj['key']}"
         }
 
 
