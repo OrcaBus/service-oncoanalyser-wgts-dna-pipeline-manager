@@ -28,7 +28,7 @@ def handler(event, context):
     payload = get_latest_payload_from_portal_run_id(portal_run_id)
 
     # Get the genomes.GRCh38Umccr key and change it to genomes.GRCh38_umccr
-    if "GRCh38Umccr" in payload.get("data", {}).get("inputs", {}).get("genomes", {}).get("GRCh38Umccr", {}):
+    if "GRCh38Umccr" in payload.get("data", {}).get("inputs", {}).get("genomes", {}):
         payload["data"]["inputs"]["genomes"]["GRCh38_umccr"] = payload["data"]["inputs"]["genomes"].pop("GRCh38Umccr")
 
     # Strip orcabusId and the payload ref id from the payload
