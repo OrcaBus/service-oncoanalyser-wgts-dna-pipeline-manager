@@ -32,6 +32,7 @@ export const WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP: Record<
   // At the moment we are running manual deployments of the workflow
   '2.0.0': 'a64126df-d8b2-4ec0-99df-1154f44a74ef',
   '2.1.0': 'ab6e1d62-1b5a-4b24-86b8-81ccf4bdc7a2',
+  '2.2.0': '40b8005e-1473-4257-9949-cc8b42750cf0',
 };
 
 export const WORKFLOW_VERSION_TO_DEFAULT_HMF_REFERENCE_PATHS_MAP: Record<
@@ -42,6 +43,8 @@ export const WORKFLOW_VERSION_TO_DEFAULT_HMF_REFERENCE_PATHS_MAP: Record<
     's3://reference-data-503977275616-ap-southeast-2/refdata/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.0--3/',
   '2.1.0':
     's3://reference-data-503977275616-ap-southeast-2/refdata/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.1.0--1/',
+  '2.2.0':
+    's3://reference-data-503977275616-ap-southeast-2/refdata/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.2.0--3/',
 };
 
 export const GENOMES_MAP: Record<NotInBuiltInHmfReferenceGenomesType, Genome> = {
@@ -69,6 +72,13 @@ export const DEFAULT_WORKFLOW_INPUTS_BY_VERSION_MAP: Record<WorkflowVersionType,
     forceGenome: true,
   },
   '2.1.0': {
+    mode: 'wgts',
+    genome: 'GRCh38_umccr',
+    genomeVersion: '38',
+    genomeType: 'alt',
+    forceGenome: true,
+  },
+  '2.2.0': {
     mode: 'wgts',
     genome: 'GRCh38_umccr',
     genomeVersion: '38',
