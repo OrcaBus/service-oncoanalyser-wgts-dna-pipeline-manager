@@ -53,7 +53,7 @@
       "Resource": "arn:aws:states:::lambda:invoke",
       "Output": "{% $states.result.Payload %}",
       "Arguments": {
-        "FunctionName": "${__get_latest_payload_from_portal_run_id_lambda_function_arn__}",
+        "FunctionName": "${__get_draft_payload_lambda_function_arn__}",
         "Payload": {
           "portalRunId": "{% $draftWorkflowRunObject.portalRunId %}"
         }

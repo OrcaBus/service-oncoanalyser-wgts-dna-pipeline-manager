@@ -145,15 +145,15 @@
           "type": "string",
           "examples": ["GRCh38_umccr"]
         },
-        "genome_version": {
+        "genomeVersion": {
           "type": "string",
           "examples": ["38"]
         },
-        "genome_type": {
+        "genomeType": {
           "type": "string",
           "examples": ["alt"]
         },
-        "force_genome": {
+        "forceGenome": {
           "type": "boolean",
           "examples": [true]
         },

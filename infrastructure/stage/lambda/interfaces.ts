@@ -4,9 +4,11 @@ export type LambdaName =
   // Shared pre-ready lambdas
   | 'comparePayload'
   | 'getBamFromLatestDragenWorkflow'
+  | 'getDraftPayload'
   // Glue lambdas
   | 'generateWruEventObjectWithMergedData'
   | 'getLatestPayloadFromPortalRunId'
+  | 'getOncoanalyserWgtsDnaDraftWorkflowFromDragenSucceededWorkflow'
   // Draft Builder lambdas
   | 'getFastqIdListFromRgidList'
   | 'getFastqRgidsFromLibraryId'
@@ -22,9 +24,11 @@ export const lambdaNameList: LambdaName[] = [
   // Shared pre-ready lambdas
   'comparePayload',
   'getBamFromLatestDragenWorkflow',
+  'getDraftPayload',
   // Glue lambdas
   'generateWruEventObjectWithMergedData',
   'getLatestPayloadFromPortalRunId',
+  'getOncoanalyserWgtsDnaDraftWorkflowFromDragenSucceededWorkflow',
   // Draft Builder lambdas
   'getFastqIdListFromRgidList',
   'getFastqRgidsFromLibraryId',
@@ -53,11 +57,17 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   getBamFromLatestDragenWorkflow: {
     needsOrcabusApiTools: true,
   },
+  getDraftPayload: {
+    needsOrcabusApiTools: true,
+  },
   // Glue lambdas
   generateWruEventObjectWithMergedData: {
     needsOrcabusApiTools: true,
   },
   getLatestPayloadFromPortalRunId: {
+    needsOrcabusApiTools: true,
+  },
+  getOncoanalyserWgtsDnaDraftWorkflowFromDragenSucceededWorkflow: {
     needsOrcabusApiTools: true,
   },
   // Draft Builder lambdas

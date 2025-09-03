@@ -89,6 +89,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'getBamFromLatestDragenWorkflow',
     'generateWruEventObjectWithMergedData',
     'getLatestPayloadFromPortalRunId',
+    'getDraftPayload',
   ],
   populateDraftData: [
     'comparePayload',
@@ -98,6 +99,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'getLibraries',
     'getMetadataTags',
     'validateDraftCompleteSchema',
+    'getDraftPayload',
   ],
   validateDraftToReady: ['validateDraftCompleteSchema'],
   readyEventToIcav2WesRequestEvent: ['convertReadyEventInputsToIcav2WesEventInputs'],
