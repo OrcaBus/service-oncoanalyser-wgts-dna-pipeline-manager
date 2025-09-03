@@ -610,7 +610,9 @@
             "Keep Original normal data": {
               "Type": "Pass",
               "End": true,
-              "Output": "{% $draftInputs.tumorDnaBamUri %}"
+              "Output": {
+                "bamUri": "{% $draftInputs.normalDnaBamUri %}"
+              }
             }
           }
         },
@@ -669,7 +671,9 @@
             "Keep Original tumor data": {
               "Type": "Pass",
               "End": true,
-              "Output": "{% $draftInputs.tumorDnaBamUri %}"
+              "Output": {
+                "bamUri": "{% $draftInputs.tumorDnaBamUri %}"
+              }
             },
             "tumorFastqListRowsIsEmpty": {
               "Type": "Pass",
@@ -695,7 +699,7 @@
       ],
       "Next": "Add reference data",
       "Assign": {
-        "draftInputs": "{% /* https://try.jsonata.org/ZAkTIin-h */\n[\n  /* Get the default input params */\n  $states.result[2],\n  /* Start with the draft inputs */\n  $draftInputs,\n  /* Combine the states results */\n  {\n      \"normalDnaBamUri\": $states.result[0].bamUri,\n      \"tumorDnaBamUri\": $states.result[1].bamUri ? $states.result[1].bamUri : null\n  },\n  /* Add in the required sampleName and tumorSampleName */\n  /* These must match the value of the library id */\n  {\n    \"normalDnaSampleId\": $draftTags.libraryId,\n    \"tumorDnaSampleId\": $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId : null\n  }\n]\n/* Combine old and new */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
+        "draftInputs": "{% /* https://try.jsonata.org/ZAkTIin-h */\n[\n  /* Get the default input params */\n  $states.result[2],\n  /* Start with the draft inputs */\n  $draftInputs,\n  /* Combine the states results */\n  {\n      \"normalDnaBamUri\": $states.result[0].bamUri,\n      \"tumorDnaBamUri\": $states.result[1].bamUri ? $states.result[1].bamUri : null\n  },\n  /* Add in the required sampleName and tumorSampleName */\n  /* These must match the value of the library id */\n  {\n    \"normalDnaSampleId\": $draftTags.libraryId,\n    \"tumorDnaSampleId\": $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId : null\n  },\n  /* We also add in the groupId and subjectId if theyre not already in */\n  {\n    \"groupId\": (\n        $draftInputs.groupId ? $draftInputs.groupId : (\n            ( $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId & \"__\": \"\" ) & $draftTags.libraryId\n        )\n    ),\n    \"subjectId\": (\n        $draftInputs.subjectId ? $draftInputs.subjectId : (\n            ( $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId & \"__\": \"\" ) & $draftTags.libraryId\n        )\n    )\n  }\n]\n/* Combine old and new */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
       }
     },
     "Add reference data": {
@@ -772,9 +776,37 @@
     },
     "Set new draft payload": {
       "Type": "Pass",
-      "Next": "Compare payload",
+      "Next": "Get current payload",
       "Assign": {
         "draftPayload": "{% (\n  $merge([\n    $draftPayload,\n    {\n      \"refId\": null,\n      \"orcabusId\": null,\n      \"data\": {\n        \"inputs\": $draftInputs,\n        \"engineParameters\": $engineParameters,\n        \"tags\": $tags\n      }\n    } \n  ]) ~>\n  $sift(function($v, $k){$v != null})\n) %}"
+      }
+    },
+    "Get current payload": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__get_draft_payload_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $draftDetail.portalRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Compare payload",
+      "Assign": {
+        "currentPayload": "{% $states.result.Payload.payload %}"
       }
     },
     "Compare payload": {
@@ -784,7 +816,7 @@
       "Arguments": {
         "FunctionName": "${__compare_payload_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $draftDetail.portalRunId %}",
+          "oldPayload": "{% $currentPayload %}",
           "newPayload": "{% $draftPayload %}"
         }
       },
