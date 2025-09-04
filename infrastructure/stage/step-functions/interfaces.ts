@@ -90,6 +90,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'generateWruEventObjectWithMergedData',
     'getLatestPayloadFromPortalRunId',
     'getDraftPayload',
+    'getOncoanalyserWgtsDnaDraftWorkflowFromDragenSucceededWorkflow',
   ],
   populateDraftData: [
     'comparePayload',
