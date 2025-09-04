@@ -260,7 +260,7 @@
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
               "Output": {
-                "logsUri": "{% $states.result.Parameter.Value & $draftDetail.portalRunId & '/' %}"
+                "cacheUri": "{% $states.result.Parameter.Value & $draftDetail.portalRunId & '/' %}"
               }
             }
           }
@@ -588,7 +588,7 @@
                 "Payload": {
                   "normalLibraryId": "{% $draftTags.libraryId %}",
                   "tumorLibraryId": "{% $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId : null %}",
-                  "phenotype": "normal"
+                  "phenotype": "NORMAL"
                 }
               },
               "Retry": [
@@ -649,7 +649,7 @@
                 "Payload": {
                   "tumorLibraryId": "{% $draftTags.tumorLibraryId %}",
                   "normalLibraryId": "{% $draftTags.libraryId %}",
-                  "phenotype": "tumor"
+                  "phenotype": "TUMOR"
                 }
               },
               "Retry": [

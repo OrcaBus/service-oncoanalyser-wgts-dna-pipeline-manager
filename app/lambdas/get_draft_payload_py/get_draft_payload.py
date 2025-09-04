@@ -8,6 +8,7 @@ If genomes.GRCh38Umccr is a key, we switch it to genomes.GRCh38_umccr
 Given a portal run id
 
 """
+from requests import HTTPError
 
 # Standard imports
 
@@ -25,7 +26,12 @@ def handler(event, context):
     """
     portal_run_id = event['portalRunId']
 
-    payload = get_latest_payload_from_portal_run_id(portal_run_id)
+    try:
+        payload = get_latest_payload_from_portal_run_id(portal_run_id)
+    except HTTPError as e:
+        return {
+            "payload": {},
+        }
 
     # Get the genomes.GRCh38Umccr key and change it to genomes.GRCh38_umccr
     if "GRCh38Umccr" in payload.get("data", {}).get("inputs", {}).get("genomes", {}):
