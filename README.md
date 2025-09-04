@@ -169,7 +169,7 @@ WORKFLOW_VERSION="2.1.0"
 EXECUTION_ENGINE="ICA"
 CODE_VERSION="0d0dc2"
 
-PAYLOAD_VERSION="2025.06.24"
+PAYLOAD_VERSION="2025.08.05"
 
 # Glocals
 LIBRARY_ID="L2300950"
@@ -316,6 +316,9 @@ event_cli_json="$( \
             "workflowRunName": ("umccr--automated--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
             "portalRunId": $portalRunId,
             "libraries": $libraries,
+            "payload": {
+              "version": $payloadVersion
+            }
           } |
           tojson
         )
@@ -353,9 +356,9 @@ DETAIL_TYPE="WorkflowRunStateChange"
 SOURCE="orcabus.manual"
 
 WORKFLOW_NAME="oncoanalyser-wgts-dna"
-WORKFLOW_VERSION="4.4.4"
+WORKFLOW_VERSION="2.1.0"
 
-PAYLOAD_VERSION="2025.06.24"
+PAYLOAD_VERSION="2025.08.05"
 
 # Glocals
 LIBRARY_ID="L2300950"
@@ -442,7 +445,6 @@ event_cli_json="$( \
     --arg source "$SOURCE" \
     --arg workflowName "${WORKFLOW_NAME}" \
     --arg workflowVersion "${WORKFLOW_VERSION}" \
-    --arg payloadVersion "$PAYLOAD_VERSION" \
     --arg portalRunId "$(generate_portal_run_id)" \
     --argjson libraries "$(get_linked_libraries "${LIBRARY_ID}" "${TUMOR_LIBRARY_ID}")" \
     '
@@ -460,7 +462,7 @@ event_cli_json="$( \
             "workflowVersion": $workflowVersion,
             "workflowRunName": ("umccr--automated--" + $workflowName + "--" + ($workflowVersion | gsub("\\."; "-")) + "--" + $portalRunId),
             "portalRunId": $portalRunId,
-            "linkedLibraries": $libraries,
+            "linkedLibraries": $libraries
           } |
           tojson
         )

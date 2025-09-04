@@ -64,9 +64,6 @@ function buildWorkflowManagerLegacyDraftEventPattern(): EventPattern {
     detail: {
       workflowName: [WORKFLOW_NAME],
       status: [DRAFT_STATUS],
-      payload: {
-        version: [DEFAULT_PAYLOAD_VERSION],
-      },
     },
   };
 }
