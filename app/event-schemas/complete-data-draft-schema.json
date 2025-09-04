@@ -182,6 +182,28 @@
         "refDataHmfDataPath",
         "genomes"
       ]
+    },
+    "engineParameters": {
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "string"
+        },
+        "pipelineId": {
+          "type": "string"
+        },
+        "outputUri": {
+          "$ref": "#/$defs/s3UriDirectory"
+        },
+        "logsUri": {
+          "$ref": "#/$defs/s3UriDirectory"
+        },
+        "cacheUri": {
+          "$ref": "#/$defs/s3UriDirectory"
+        }
+      },
+      "required": ["projectId", "pipelineId", "outputUri", "logsUri", "cacheUri"],
+      "allowAdditionalProperties": true
     }
   },
   "type": "object",
@@ -191,7 +213,10 @@
     },
     "inputs": {
       "$ref": "#/$defs/inputs"
+    },
+    "engineParameters": {
+      "$ref": "#/$defs/engineParameters"
     }
   },
-  "required": ["tags", "inputs"]
+  "required": ["tags", "inputs", "engineParameters"]
 }
