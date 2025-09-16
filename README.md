@@ -315,10 +315,7 @@ event_cli_json="$( \
             "workflow": $workflow,
             "workflowRunName": ("umccr--automated--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
             "portalRunId": $portalRunId,
-            "libraries": $libraries,
-            "payload": {
-              "version": $payloadVersion
-            }
+            "libraries": $libraries
           } |
           tojson
         )
