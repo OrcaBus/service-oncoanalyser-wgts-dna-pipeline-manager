@@ -20,7 +20,7 @@
       "Resource": "arn:aws:states:::lambda:invoke",
       "Output": "{% $states.result.Payload %}",
       "Arguments": {
-        "FunctionName": "${__validate_draft_complete_schema_lambda_function_arn__}",
+        "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
         "Payload": "{% $draftData %}"
       },
       "Retry": [
@@ -47,7 +47,36 @@
           "Next": "Success"
         }
       ],
-      "Default": "Do we have matching libraries"
+      "Default": "Get workflow object"
+    },
+    "Get workflow object": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__get_workflow_run_object_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $draftDetail.portalRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Do we have matching libraries",
+      "Assign": {
+        "draftWorkflowRunObject": "{% $states.result.Payload.workflowRunObject %}"
+      }
     },
     "Do we have matching libraries": {
       "Type": "Choice",
@@ -418,7 +447,7 @@
               "End": true,
               "Output": {
                 "subjectId": "{% $states.result.Payload.libraryObj.subject.subjectId %}",
-                "individualId": "{% $states.result.Payload.libraryObj.subject.individualSet[0].individualId %}"
+                "individualId": "{% $count($states.result.Payload.libraryObj.subject.individualSet) > 0 ? $states.result.Payload.libraryObj.subject.individualSet[0].individualId : $states.result.Payload.libraryObj.subject.subjectId %}"
               }
             }
           }
@@ -567,28 +596,31 @@
       "Type": "Parallel",
       "Branches": [
         {
-          "StartAt": "Has normal data",
+          "StartAt": "Has dragen data",
           "States": {
-            "Has normal data": {
+            "Has dragen data": {
               "Type": "Choice",
               "Choices": [
                 {
-                  "Next": "Keep Original normal data",
-                  "Condition": "{% $draftInputs.normalDnaBamUri ? true : false %}"
+                  "Next": "Keep Original germline data",
+                  "Condition": "{% ($draftInputs.normalDnaBamUri ? true : false) or ($draftInputs.tumorDnaBamUri ? true : false) %}"
                 }
               ],
-              "Default": "Get latest normal bam from tn workflow"
+              "Default": "Get dragen wgts dna succeeded event"
             },
-            "Get latest normal bam from tn workflow": {
+            "Get dragen wgts dna succeeded event": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
-              "Output": "{% $states.result.Payload %}",
+              "Assign": {
+                "dragenWgtsDnaWorkflowObject": "{% $states.result.Payload.workflowRunObject %}"
+              },
               "Arguments": {
-                "FunctionName": "${__get_bam_from_latest_dragen_workflow_lambda_function_arn__}",
+                "FunctionName": "${__find_latest_workflow_lambda_function_arn__}",
                 "Payload": {
-                  "normalLibraryId": "{% $draftTags.libraryId %}",
-                  "tumorLibraryId": "{% $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId : null %}",
-                  "phenotype": "NORMAL"
+                  "workflowName": "${__dragen_wgts_dna_workflow_name__}",
+                  "libraries": "{% $libraries %}",
+                  "analysisRunId": "{% $draftWorkflowRunObject.analysisRun ? $draftWorkflowRunObject.analysisRun.orcabusId : null %}",
+                  "status": "${__succeeded_status__}"
                 }
               },
               "Retry": [
@@ -605,80 +637,117 @@
                   "JitterStrategy": "FULL"
                 }
               ],
-              "End": true
+              "Next": "Dragen WGTS DNA succeeded workflow found"
             },
-            "Keep Original normal data": {
-              "Type": "Pass",
-              "End": true,
-              "Output": {
-                "bamUri": "{% $draftInputs.normalDnaBamUri %}"
-              }
-            }
-          }
-        },
-        {
-          "StartAt": "Has tumor rgid list (get tumor rgid list)",
-          "States": {
-            "Has tumor rgid list (get tumor rgid list)": {
+            "Dragen WGTS DNA succeeded workflow found": {
               "Type": "Choice",
               "Choices": [
                 {
-                  "Next": "Has tumor data",
-                  "Condition": "{% $tags.tumorFastqRgidList ? true : false %}"
+                  "Condition": "{% $dragenWgtsDnaWorkflowObject ? true : false %}",
+                  "Next": "Get dragen dirs"
                 }
               ],
-              "Default": "tumorFastqListRowsIsEmpty"
+              "Default": "No dragen output data found"
             },
-            "Has tumor data": {
-              "Type": "Choice",
-              "Choices": [
+            "Get dragen dirs": {
+              "Type": "Parallel",
+              "End": true,
+              "Branches": [
                 {
-                  "Next": "Keep Original tumor data",
-                  "Condition": "{% $draftInputs.tumorDnaBamUri ? true : false %}",
-                  "Comment": "Has tumor bam data inputs"
-                }
-              ],
-              "Default": "Get latest tumor bam from tn workflow"
-            },
-            "Get latest tumor bam from tn workflow": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Output": "{% $states.result.Payload %}",
-              "Arguments": {
-                "FunctionName": "${__get_bam_from_latest_dragen_workflow_lambda_function_arn__}",
-                "Payload": {
-                  "tumorLibraryId": "{% $draftTags.tumorLibraryId %}",
-                  "normalLibraryId": "{% $draftTags.libraryId %}",
-                  "phenotype": "TUMOR"
-                }
-              },
-              "Retry": [
+                  "StartAt": "Get dragen normal bam from portal run id",
+                  "States": {
+                    "Get dragen normal bam from portal run id": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Output": {
+                        "normalDnaBamUri": "{% $states.result.Payload.dragenNormalDnaBamUri %}"
+                      },
+                      "Arguments": {
+                        "FunctionName": "${__get_dragen_outputs_from_portal_run_id_lambda_function_arn__}",
+                        "Payload": {
+                          "portalRunId": "{% $dragenWgtsDnaWorkflowObject.portalRunId %}",
+                          "phenotype": "NORMAL"
+                        }
+                      },
+                      "Retry": [
+                        {
+                          "ErrorEquals": [
+                            "Lambda.ServiceException",
+                            "Lambda.AWSLambdaException",
+                            "Lambda.SdkClientException",
+                            "Lambda.TooManyRequestsException"
+                          ],
+                          "IntervalSeconds": 1,
+                          "MaxAttempts": 3,
+                          "BackoffRate": 2,
+                          "JitterStrategy": "FULL"
+                        }
+                      ],
+                      "End": true
+                    }
+                  }
+                },
                 {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                    "Lambda.TooManyRequestsException"
-                  ],
-                  "IntervalSeconds": 1,
-                  "MaxAttempts": 3,
-                  "BackoffRate": 2,
-                  "JitterStrategy": "FULL"
+                  "StartAt": "Has tumor rgid list",
+                  "States": {
+                    "Has tumor rgid list": {
+                      "Type": "Choice",
+                      "Choices": [
+                        {
+                          "Next": "Get dragen somatic bam from portal run id",
+                          "Condition": "{% $tags.tumorFastqRgidList ? true : false %}"
+                        }
+                      ],
+                      "Default": "Pass"
+                    },
+                    "Pass": {
+                      "Type": "Pass",
+                      "End": true,
+                      "Output": {}
+                    },
+                    "Get dragen somatic bam from portal run id": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Output": {
+                        "tumorDnaBamUri": "{% $states.result.Payload.dragenTumorDnaBamUri %}"
+                      },
+                      "Arguments": {
+                        "FunctionName": "${__get_dragen_outputs_from_portal_run_id_lambda_function_arn__}",
+                        "Payload": {
+                          "portalRunId": "{% $dragenWgtsDnaWorkflowObject.portalRunId %}",
+                          "phenotype": "TUMOR"
+                        }
+                      },
+                      "Retry": [
+                        {
+                          "ErrorEquals": [
+                            "Lambda.ServiceException",
+                            "Lambda.AWSLambdaException",
+                            "Lambda.SdkClientException",
+                            "Lambda.TooManyRequestsException"
+                          ],
+                          "IntervalSeconds": 1,
+                          "MaxAttempts": 3,
+                          "BackoffRate": 2,
+                          "JitterStrategy": "FULL"
+                        }
+                      ],
+                      "End": true
+                    }
+                  }
                 }
               ],
-              "End": true
+              "Output": "{% $states.result ~> $merge %}"
             },
-            "Keep Original tumor data": {
+            "No dragen output data found": {
               "Type": "Pass",
               "End": true,
-              "Output": {
-                "bamUri": "{% $draftInputs.tumorDnaBamUri %}"
-              }
+              "Output": {}
             },
-            "tumorFastqListRowsIsEmpty": {
+            "Keep Original germline data": {
               "Type": "Pass",
               "End": true,
-              "Output": null
+              "Output": {}
             }
           }
         },
@@ -691,42 +760,42 @@
                 "Name": "{% '${__default_inputs_ssm_parameter_prefix__}/' & $draftDetail.workflow.version %}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
-              "Output": "{% $parse($states.result.Parameter.Value) %}",
-              "End": true
+              "End": true,
+              "Output": "{% $parse($states.result.Parameter.Value) %}"
             }
           }
         }
       ],
       "Next": "Add reference data",
       "Assign": {
-        "draftInputs": "{% /* https://try.jsonata.org/ZAkTIin-h */\n[\n  /* Get the default input params */\n  $states.result[2],\n  /* Start with the draft inputs */\n  $draftInputs,\n  /* Combine the states results */\n  {\n      \"normalDnaBamUri\": $states.result[0].bamUri,\n      \"tumorDnaBamUri\": $states.result[1].bamUri ? $states.result[1].bamUri : null\n  },\n  /* Add in the required sampleName and tumorSampleName */\n  /* These must match the value of the library id */\n  {\n    \"normalDnaSampleId\": $draftTags.libraryId,\n    \"tumorDnaSampleId\": $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId : null\n  },\n  /* We also add in the groupId and subjectId if theyre not already in */\n  {\n    \"groupId\": (\n        $draftInputs.groupId ? $draftInputs.groupId : (\n            ( $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId & \"__\": \"\" ) & $draftTags.libraryId\n        )\n    ),\n    \"subjectId\": (\n        $draftInputs.subjectId ? $draftInputs.subjectId : (\n            ( $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId & \"__\": \"\" ) & $draftTags.libraryId\n        )\n    )\n  }\n]\n/* Combine old and new */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
+        "draftInputs": "{% /* https://try.jsonata.org/ZAkTIin-h */\n[\n  /* Start with the draft inputs */\n  $draftInputs,\n  /* Then get the default input params */\n  $states.result[1],\n  /* Combine the states results for the dragen outputs */\n  $states.result[0],\n  /* Add in the required sampleName and tumorSampleName */\n  /* These must match the value of the library id */\n  {\n    \"normalDnaSampleId\": $draftTags.libraryId,\n    \"tumorDnaSampleId\": $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId : null\n  },\n  /* We also add in the groupId and subjectId if theyre not already in */\n  {\n    \"groupId\": (\n        $draftInputs.groupId ? $draftInputs.groupId : (\n            ( $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId & \"__\": \"\" ) & $draftTags.libraryId\n        )\n    ),\n    \"subjectId\": (\n        $draftInputs.subjectId ? $draftInputs.subjectId : (\n            ( $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId & \"__\": \"\" ) & $draftTags.libraryId\n        )\n    )\n  }\n]\n/* Combine list of objects */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
       }
     },
     "Add reference data": {
       "Type": "Parallel",
-      "Next": "Set new draft payload",
+      "Next": "Make new WRU event",
       "Branches": [
         {
-          "StartAt": "Hmf Reference Provided",
+          "StartAt": "Hmf Reference data provided",
           "States": {
-            "Hmf Reference Provided": {
+            "Hmf Reference data provided": {
               "Type": "Choice",
               "Choices": [
                 {
-                  "Next": "Use provided hmf ref data path",
+                  "Next": "Use provided oncoanalyser wgts dna ref data path",
                   "Condition": "{% $draftInputs.refDataHmfDataPath ? true : false %}"
                 }
               ],
-              "Default": "Use default hmf ref data path"
+              "Default": "Use default oncoanalyser wgts dna ref data path"
             },
-            "Use provided hmf ref data path": {
+            "Use provided oncoanalyser wgts dna ref data path": {
               "Type": "Pass",
               "End": true,
               "Output": {
                 "refDataHmfDataPath": "{% $draftInputs.refDataHmfDataPath %}"
               }
             },
-            "Use default hmf ref data path": {
+            "Use default oncoanalyser wgts dna ref data path": {
               "Type": "Task",
               "Arguments": {
                 "Name": "{% '${__default_hmf_reference_data_path_ssm_parameter_prefix__}/' & $draftDetail.workflow.version %}"
@@ -746,11 +815,11 @@
               "Type": "Choice",
               "Choices": [
                 {
-                  "Condition": "{%(($draftInputs.genome ~> $match(/_hmf$/)) ? true : false) ~> $not %}",
-                  "Next": "Get genome parameter"
+                  "Next": "Get genome parameter",
+                  "Condition": "{% ( ( $draftInputs.genome ~> $match(/_hmf$/) ) ? true : false ) ~> $not %}"
                 }
               ],
-              "Default": "Pass"
+              "Default": "Refdata placeholder"
             },
             "Get genome parameter": {
               "Type": "Task",
@@ -760,12 +829,13 @@
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
               "Output": {
-                "genomes": "{% {\n    $draftInputs.genome: $parse($states.result.Parameter.Value)\n} %}"
+                "genomes": "{% {\n  $draftInputs.genome: $parse($states.result.Parameter.Value)\n} %}"
               }
             },
-            "Pass": {
+            "Refdata placeholder": {
               "Type": "Pass",
-              "End": true
+              "End": true,
+              "Output": {}
             }
           }
         }
@@ -774,20 +844,23 @@
         "draftInputs": "{% [\n  /* Start with the draft inputs + sequence data inputs */\n  $draftInputs,\n  /* Combine the states results */\n  $merge($states.result)\n] \n/* Merge Old and new */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
       }
     },
-    "Set new draft payload": {
-      "Type": "Pass",
-      "Next": "Get current payload",
-      "Assign": {
-        "draftPayload": "{% (\n  $merge([\n    $draftPayload,\n    {\n      \"refId\": null,\n      \"orcabusId\": null,\n      \"data\": {\n        \"inputs\": $draftInputs,\n        \"engineParameters\": $engineParameters,\n        \"tags\": $tags\n      }\n    } \n  ]) ~>\n  $sift(function($v, $k){$v != null})\n) %}"
-      }
-    },
-    "Get current payload": {
+    "Make new WRU event": {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
       "Arguments": {
-        "FunctionName": "${__get_draft_payload_lambda_function_arn__}",
+        "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $draftDetail.portalRunId %}"
+          "portalRunId": "{% $draftDetail.portalRunId %}",
+          "libraries": "{% $libraries %}",
+          "payload": {
+            "version": "{% $draftPayload.version ? $draftPayload.version : '${__default_payload_version__}' %}",
+            "data": {
+              "inputs": "{% $draftInputs %}",
+              "tags": "{% $tags %}",
+              "engineParameters": "{% $engineParameters %}"
+            }
+          }
         }
       },
       "Retry": [
@@ -806,7 +879,7 @@
       ],
       "Next": "Compare payload",
       "Assign": {
-        "currentPayload": "{% $states.result.Payload.payload %}"
+        "oncoanalyserWgtsDnaDraftWorkflowRunUpdate": "{% $states.result.Payload.oncoanalyserWgtsDnaWorkflowRunUpdate %}"
       }
     },
     "Compare payload": {
@@ -816,8 +889,8 @@
       "Arguments": {
         "FunctionName": "${__compare_payload_lambda_function_arn__}",
         "Payload": {
-          "oldPayload": "{% $currentPayload %}",
-          "newPayload": "{% $draftPayload %}"
+          "oldPayload": "{% $draftPayload ~> \n| $ | {}, [\"orcabusId\", \"refId\"] | %}",
+          "newPayload": "{% $oncoanalyserWgtsDnaDraftWorkflowRunUpdate.payload %}"
         }
       },
       "Retry": [
@@ -864,7 +937,7 @@
       "Arguments": {
         "Entries": [
           {
-            "Detail": "{% $merge([\n  $draftDetail,\n  {\n    \"id\": null,\n    \"status\": \"${__draft_event_status__}\",\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": $libraries,\n    \"payload\": $draftPayload\n  }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
+            "Detail": "{% $merge([\n  $oncoanalyserWgtsDnaDraftWorkflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
             "DetailType": "${__workflow_run_update_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__stack_source__}"
@@ -883,7 +956,7 @@
       "Arguments": {
         "Entries": [
           {
-            "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $draftDetail,\n  {\n    \"status\": \"${__draft_event_status__}\",\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": ($libraries ~> | $ | {}, [\"readsets\"] |),\n    \"payload\": $draftPayload\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
+            "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $oncoanalyserWgtsDnaDraftWorkflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": ($libraries ~> | $ | {}, [\"readsets\"] |)\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
             "DetailType": "${__workflow_run_state_change_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__stack_source__}"

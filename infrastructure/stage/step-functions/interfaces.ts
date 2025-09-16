@@ -85,24 +85,33 @@ export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunction
 
 export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = {
   glueSucceededEventsToDraftUpdate: [
+    // Shared lambdas
     'comparePayload',
-    'getBamFromLatestDragenWorkflow',
+    'getDraftPayload',
+    'findLatestWorkflow',
+    'getDragenOutputsFromPortalRunId',
+    'getWorkflowRunObject',
     'generateWruEventObjectWithMergedData',
     'getLatestPayloadFromPortalRunId',
-    'getDraftPayload',
-    'getOncoanalyserWgtsDnaDraftWorkflowFromDragenSucceededWorkflow',
   ],
   populateDraftData: [
+    // Shared lambdas
     'comparePayload',
-    'getBamFromLatestDragenWorkflow',
+    'getDraftPayload',
+    'findLatestWorkflow',
+    'getDragenOutputsFromPortalRunId',
+    'getWorkflowRunObject',
+    'generateWruEventObjectWithMergedData',
+    'getLatestPayloadFromPortalRunId',
+    // Draft Builder lambdas
     'getFastqIdListFromRgidList',
     'getFastqRgidsFromLibraryId',
     'getLibraries',
     'getMetadataTags',
-    'validateDraftCompleteSchema',
-    'getDraftPayload',
+    // Validation lambda
+    'validateDraftDataCompleteSchema',
   ],
-  validateDraftToReady: ['validateDraftCompleteSchema'],
+  validateDraftToReady: ['validateDraftDataCompleteSchema'],
   readyEventToIcav2WesRequestEvent: ['convertReadyEventInputsToIcav2WesEventInputs'],
   icav2WesAscEventToWorkflowRscEvent: ['convertIcav2WesEventToWrscEvent'],
 };

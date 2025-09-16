@@ -3,18 +3,20 @@ import { PythonUvFunction } from '@orcabus/platform-cdk-constructs/lambda';
 export type LambdaName =
   // Shared pre-ready lambdas
   | 'comparePayload'
-  | 'getBamFromLatestDragenWorkflow'
   | 'getDraftPayload'
-  // Glue lambdas
+  | 'findLatestWorkflow'
+  | 'getDragenOutputsFromPortalRunId'
+  | 'getWorkflowRunObject'
   | 'generateWruEventObjectWithMergedData'
   | 'getLatestPayloadFromPortalRunId'
-  | 'getOncoanalyserWgtsDnaDraftWorkflowFromDragenSucceededWorkflow'
+  // Glue lambdas
   // Draft Builder lambdas
   | 'getFastqIdListFromRgidList'
   | 'getFastqRgidsFromLibraryId'
   | 'getLibraries'
   | 'getMetadataTags'
-  | 'validateDraftCompleteSchema'
+  // Validation lambda
+  | 'validateDraftDataCompleteSchema'
   // Ready to ICAv2 WES lambdas
   | 'convertReadyEventInputsToIcav2WesEventInputs'
   // ICAv2 WES to WRSC Event lambdas
@@ -23,18 +25,20 @@ export type LambdaName =
 export const lambdaNameList: LambdaName[] = [
   // Shared pre-ready lambdas
   'comparePayload',
-  'getBamFromLatestDragenWorkflow',
   'getDraftPayload',
-  // Glue lambdas
+  'findLatestWorkflow',
+  'getDragenOutputsFromPortalRunId',
+  'getWorkflowRunObject',
   'generateWruEventObjectWithMergedData',
   'getLatestPayloadFromPortalRunId',
-  'getOncoanalyserWgtsDnaDraftWorkflowFromDragenSucceededWorkflow',
+  // Glue lambdas
   // Draft Builder lambdas
   'getFastqIdListFromRgidList',
   'getFastqRgidsFromLibraryId',
   'getLibraries',
   'getMetadataTags',
-  'validateDraftCompleteSchema',
+  // Validate Draft Complete Schema
+  'validateDraftDataCompleteSchema',
   // Ready to ICAv2 WES lambdas
   'convertReadyEventInputsToIcav2WesEventInputs',
   // ICAv2 WES to WRSC Event lambdas
@@ -54,22 +58,25 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   comparePayload: {
     needsOrcabusApiTools: true,
   },
-  getBamFromLatestDragenWorkflow: {
-    needsOrcabusApiTools: true,
-  },
   getDraftPayload: {
     needsOrcabusApiTools: true,
   },
-  // Glue lambdas
+  findLatestWorkflow: {
+    needsOrcabusApiTools: true,
+  },
+  getDragenOutputsFromPortalRunId: {
+    needsOrcabusApiTools: true,
+  },
+  getWorkflowRunObject: {
+    needsOrcabusApiTools: true,
+  },
   generateWruEventObjectWithMergedData: {
     needsOrcabusApiTools: true,
   },
   getLatestPayloadFromPortalRunId: {
     needsOrcabusApiTools: true,
   },
-  getOncoanalyserWgtsDnaDraftWorkflowFromDragenSucceededWorkflow: {
-    needsOrcabusApiTools: true,
-  },
+  // Glue lambdas
   // Draft Builder lambdas
   getFastqIdListFromRgidList: {
     needsOrcabusApiTools: true,
@@ -83,7 +90,8 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   getMetadataTags: {
     needsOrcabusApiTools: true,
   },
-  validateDraftCompleteSchema: {
+  // Validate Draft Complete schema
+  validateDraftDataCompleteSchema: {
     needsSchemaRegistryAccess: true,
     needsSsmParametersAccess: true,
   },

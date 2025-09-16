@@ -8,10 +8,9 @@ If genomes.GRCh38Umccr is a key, we switch it to genomes.GRCh38_umccr
 Given a portal run id
 
 """
-from requests import HTTPError
 
 # Standard imports
-
+from requests import HTTPError
 
 # Local imports
 from orcabus_api_tools.workflow import get_latest_payload_from_portal_run_id

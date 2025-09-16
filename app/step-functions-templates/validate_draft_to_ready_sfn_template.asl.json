@@ -18,7 +18,7 @@
         "isValid": "{% $states.result.Payload.isValid %}"
       },
       "Arguments": {
-        "FunctionName": "${__validate_draft_complete_schema_lambda_function_arn__}",
+        "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
         "Payload": "{% $payloadData %}"
       },
       "Retry": [
