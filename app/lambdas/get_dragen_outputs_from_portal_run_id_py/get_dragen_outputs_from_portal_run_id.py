@@ -60,7 +60,7 @@ def handler(event, context):
     portal_run_id = event.get('portalRunId', None)
     phenotype: Phenotype = event.get('phenotype', None)
 
-    if not phenotype in PHENOTYPE_LIST:
+    if phenotype not in PHENOTYPE_LIST:
         raise ValueError(f"Phenotype must be one of {PHENOTYPE_LIST}")
 
     bam_file_obj = get_bam_from_dragen_workflow(portal_run_id, phenotype=phenotype)

@@ -3,14 +3,10 @@
 """
 Generate a WRU event object with merged data
 """
-from typing import Dict, Any
-
 # Layer imports
 from orcabus_api_tools.workflow import (
-    get_latest_payload_from_workflow_run,
     get_workflow_run_from_portal_run_id
 )
-from orcabus_api_tools.workflow.models import WorkflowRun, Payload
 
 
 def handler(event, context):
