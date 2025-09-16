@@ -16,11 +16,14 @@ import path from 'path';
 import {
   DEFAULT_PAYLOAD_VERSION,
   DRAFT_STATUS,
+  DRAGEN_WGTS_DNA_WORKFLOW_NAME,
   EVENT_SOURCE,
   ICAV2_WES_REQUEST_DETAIL_TYPE,
   READY_STATUS,
   STACK_PREFIX,
   STEP_FUNCTIONS_DIR,
+  SUCCEEDED_STATUS,
+  WORKFLOW_NAME,
   WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
   WORKFLOW_RUN_UPDATE_DETAIL_TYPE,
 } from '../constants';
@@ -44,6 +47,12 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
     definitionSubstitutions[sfnSubtitutionKey] =
       lambdaObject.lambdaFunction.currentVersion.functionArn;
   }
+
+  /* Common substitutions */
+  definitionSubstitutions['__draft_status__'] = DRAFT_STATUS;
+  definitionSubstitutions['__succeeded_status__'] = SUCCEEDED_STATUS;
+  definitionSubstitutions['__dragen_wgts_dna_workflow_name__'] = DRAGEN_WGTS_DNA_WORKFLOW_NAME;
+  definitionSubstitutions['__oncoanalyser_wgts_dna_workflow_name__'] = WORKFLOW_NAME;
 
   /* Sfn Requirements */
   if (sfnRequirements.needsEventPutPermission) {

@@ -117,6 +117,9 @@ def get_bam_from_dragen_workflow(portal_run_id: str, phenotype: Phenotype) -> Op
 
 def handler(event, context):
     """
+    # FIXME - refactor, should only be portalRunId and phenotype as inputs
+    # FIXME - if we need to get the dragen workflow object, we should do that in a separate lambda
+    # FIXME - this upstream lambda can then return a null value if no workflow is found and we can handle that appropriately
     Given a normal and tumor library id, get the latest dragen workflow and return the bam files
     :param event:
     :param context:
