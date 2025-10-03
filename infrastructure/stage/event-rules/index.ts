@@ -44,7 +44,7 @@ function buildIcav2AnalysisStateChangeEventPattern(): EventPattern {
   };
 }
 
-function upstreamLegacySucceededEventPattern(): EventPattern {
+function buildUpstreamLegacySucceededEventPattern(): EventPattern {
   return {
     detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
@@ -80,7 +80,7 @@ function buildWorkflowManagerLegacyReadyEventPattern(): EventPattern {
   };
 }
 
-function upstreamSucceededEventPattern(): EventPattern {
+function buildUpstreamSucceededEventPattern(): EventPattern {
   return {
     detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
@@ -147,7 +147,7 @@ function buildUpstreamSucceededWorkflowRunStateChangeLegacyEventRule(
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: upstreamLegacySucceededEventPattern(),
+    eventPattern: buildUpstreamLegacySucceededEventPattern(),
     eventBus: props.eventBus,
   });
 }
@@ -158,7 +158,7 @@ function buildUpstreamSucceededWorkflowRunStateChangeEventRule(
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: upstreamSucceededEventPattern(),
+    eventPattern: buildUpstreamSucceededEventPattern(),
     eventBus: props.eventBus,
   });
 }
