@@ -72,7 +72,7 @@
       ],
       "Next": "Did we get a oncoanalyser portal run id",
       "Assign": {
-        "oncoanalyserWgtsDnaPortalRunId": "{% $states.result.Payload.workflowRunObject.portalRunId ? $states.result.Payload.workflowRunObject.portalRunId : null %}"
+        "draftPortalRunId": "{% $states.result.Payload.workflowRunObject.portalRunId ? $states.result.Payload.workflowRunObject.portalRunId : null %}"
       }
     },
     "Did we get a oncoanalyser portal run id": {
@@ -80,7 +80,7 @@
       "Choices": [
         {
           "Next": "Get oncoanalyser wgts dna draft payload",
-          "Condition": "{% $oncoanalyserWgtsDnaPortalRunId ? true : false %}"
+          "Condition": "{% $draftPortalRunId ? true : false %}"
         }
       ],
       "Default": "No oncoanalyser portal run id found"
@@ -89,12 +89,12 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Assign": {
-        "oncoanalyserWgtsDnaDraftPayload": "{% $states.result.Payload.payload %}"
+        "draftPayload": "{% $states.result.Payload.payload %}"
       },
       "Arguments": {
         "FunctionName": "${__get_draft_payload_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $oncoanalyserWgtsDnaPortalRunId %}"
+          "portalRunId": "{% $draftPortalRunId %}"
         }
       },
       "Retry": [
@@ -123,7 +123,7 @@
       "Arguments": {
         "Entries": [
           {
-            "Detail": "{% $merge([\n  $oncoanalyserWgtsDnaDraftWorkflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime\n  }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
+            "Detail": "{% $merge([\n  $workflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime\n  }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
             "DetailType": "${__workflow_run_update_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__stack_source__}"
@@ -138,7 +138,7 @@
       "Arguments": {
         "Entries": [
           {
-            "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $oncoanalyserWgtsDnaDraftWorkflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": ($libraries ~> | $ | {}, [\"readsets\"] |)\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
+            "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $workflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": ($libraries ~> | $ | {}, [\"readsets\"] |)\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
             "DetailType": "${__workflow_run_state_change_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__stack_source__}"
@@ -219,7 +219,7 @@
                       "Choices": [
                         {
                           "Next": "Get dragen tumor bam from portal run id",
-                          "Condition": "{% $oncoanalyserWgtsDnaDraftPayload.data.tags.tumorLibraryId ? true : false %}"
+                          "Condition": "{% $draftPayload.data.tags.tumorLibraryId ? true : false %}"
                         }
                       ],
                       "Default": "Germline only"
@@ -296,14 +296,14 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Assign": {
-        "oncoanalyserWgtsDnaDraftWorkflowRunUpdate": "{% $states.result.Payload.oncoanalyserWgtsDnaWorkflowRunUpdate %}",
-        "newOncoanalyserWgtsDnaPayload": "{% $states.result.Payload.oncoanalyserWgtsDnaWorkflowRunUpdate.payload %}"
+        "workflowRunUpdate": "{% $states.result.Payload.workflowRunUpdate %}",
+        "newWorkflowRunUpdatePayload": "{% $states.result.Payload.workflowRunUpdate.payload %}"
       },
       "Arguments": {
         "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $oncoanalyserWgtsDnaPortalRunId %}",
-          "payload": "{% $oncoanalyserWgtsDnaDraftPayload %}",
+          "portalRunId": "{% $draftPortalRunId %}",
+          "payload": "{% $draftPayload %}",
           "upstreamData": "{% $newWorkflowInputs %}"
         }
       },
@@ -332,8 +332,8 @@
       "Arguments": {
         "FunctionName": "${__compare_payload_lambda_function_arn__}",
         "Payload": {
-          "oldPayload": "{% $oncoanalyserWgtsDnaDraftPayload %}",
-          "newPayload": "{% $newOncoanalyserWgtsDnaPayload %}"
+          "oldPayload": "{% $draftPayload %}",
+          "newPayload": "{% $newWorkflowRunUpdatePayload %}"
         }
       },
       "Retry": [

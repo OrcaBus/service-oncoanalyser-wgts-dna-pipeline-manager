@@ -63,7 +63,7 @@ def handler(event, context):
             "data": payload['data']
         }
         return {
-            "oncoanalyserWgtsDnaWorkflowRunUpdate": oncoanalyser_draft_workflow_update
+            "workflowRunUpdate": oncoanalyser_draft_workflow_update
         }
 
     # Merge the data from the dragen draft payload into the oncoanalyser draft payload
@@ -80,5 +80,5 @@ def handler(event, context):
     }
 
     return {
-        "oncoanalyserWgtsDnaWorkflowRunUpdate": oncoanalyser_draft_workflow_update
+        "workflowRunUpdate": oncoanalyser_draft_workflow_update
     }
