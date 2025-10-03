@@ -1,14 +1,12 @@
 /* Event Bridge Rules */
 import {
-  // Yet to be utilised
-  // BuildDraftRuleProps,
+  BuildDraftRuleProps,
   BuildReadyRuleProps,
   BuildIcav2AnalysisStateChangeRuleProps,
   eventBridgeRuleNameList,
   EventBridgeRuleObject,
   EventBridgeRuleProps,
   EventBridgeRulesProps,
-  BuildDraftRuleProps,
 } from './interfaces';
 import { EventPattern, Rule } from 'aws-cdk-lib/aws-events';
 import * as events from 'aws-cdk-lib/aws-events';
