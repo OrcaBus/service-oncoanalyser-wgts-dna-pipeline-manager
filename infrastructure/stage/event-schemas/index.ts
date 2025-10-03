@@ -29,6 +29,12 @@ export function buildSchema(scope: Construct, props: BuildSchemaProps): schemas.
 }
 
 export function buildSchemas(scope: Construct) {
+  // Add an ssm entry for the registry name
+  new ssm.StringParameter(scope, `${SCHEMA_REGISTRY_NAME}-ssm`, {
+    parameterName: path.join(SSM_SCHEMA_ROOT, 'registry'),
+    stringValue: SCHEMA_REGISTRY_NAME,
+  });
+
   // Iterate over the schemas directory and create a schema for each file
   for (const schemaName of schemaNamesList) {
     const schemaObj = buildSchema(scope, {
