@@ -44,7 +44,7 @@ function buildIcav2AnalysisStateChangeEventPattern(): EventPattern {
   };
 }
 
-function dragenWgtsDnaLegacySucceededEventPattern(): EventPattern {
+function buildUpstreamLegacySucceededEventPattern(): EventPattern {
   return {
     detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
@@ -80,7 +80,7 @@ function buildWorkflowManagerLegacyReadyEventPattern(): EventPattern {
   };
 }
 
-function dragenWgtsDnaSucceededEventPattern(): EventPattern {
+function buildUpstreamSucceededEventPattern(): EventPattern {
   return {
     detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
@@ -141,24 +141,24 @@ function buildIcav2WesAnalysisStateChangeRule(
   });
 }
 
-function buildDragenWgtsDnaSucceededWorkflowRunStateChangeLegacyEventRule(
+function buildUpstreamSucceededWorkflowRunStateChangeLegacyEventRule(
   scope: Construct,
   props: BuildDraftRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: dragenWgtsDnaLegacySucceededEventPattern(),
+    eventPattern: buildUpstreamLegacySucceededEventPattern(),
     eventBus: props.eventBus,
   });
 }
 
-function buildDragenWgtsDnaSucceededWorkflowRunStateChangeEventRule(
+function buildUpstreamSucceededWorkflowRunStateChangeEventRule(
   scope: Construct,
   props: BuildDraftRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: dragenWgtsDnaSucceededEventPattern(),
+    eventPattern: buildUpstreamSucceededEventPattern(),
     eventBus: props.eventBus,
   });
 }
@@ -216,20 +216,20 @@ export function buildAllEventRules(
   // Iterate over the eventBridgeNameList and create the event rules
   for (const ruleName of eventBridgeRuleNameList) {
     switch (ruleName) {
-      case 'dragenWgtsDnaSucceededEventLegacy': {
+      case 'upstreamSucceededEventLegacy': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildDragenWgtsDnaSucceededWorkflowRunStateChangeLegacyEventRule(scope, {
+          ruleObject: buildUpstreamSucceededWorkflowRunStateChangeLegacyEventRule(scope, {
             ruleName: ruleName,
             eventBus: props.eventBus,
           }),
         });
         break;
       }
-      case 'dragenWgtsDnaSucceededEvent': {
+      case 'upstreamSucceededEvent': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildDragenWgtsDnaSucceededWorkflowRunStateChangeEventRule(scope, {
+          ruleObject: buildUpstreamSucceededWorkflowRunStateChangeEventRule(scope, {
             ruleName: ruleName,
             eventBus: props.eventBus,
           }),
