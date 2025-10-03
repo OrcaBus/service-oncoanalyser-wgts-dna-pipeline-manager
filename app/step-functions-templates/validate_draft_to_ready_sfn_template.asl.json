@@ -68,7 +68,7 @@
             "Detail": "{% $merge([\n  $detail,\n  {\n    \"timestamp\": $now(),\n    \"status\": \"${__ready_event_status__}\",\n    \"payload\": (\n      $merge([\n        $detail ~> $lookup(\"payload\"),\n        {\n          \"orcabusId\": null,\n          \"refId\": null\n        }\n      ]) ~>\n      $sift(function($v, $k){$v != null})\n    )\n  }\n]) %}",
             "DetailType": "${__workflow_run_update_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
+            "Source": "${__stack_source__}.validator"
           }
         ]
       },
@@ -83,7 +83,7 @@
             "Detail": "{% $merge([\n  $detail,\n  {\n    \"timestamp\": $now(),\n    \"status\": \"${__ready_event_status__}\"\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
             "DetailType": "${__workflow_run_state_change_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
+            "Source": "${__stack_source__}.validator"
           }
         ]
       },

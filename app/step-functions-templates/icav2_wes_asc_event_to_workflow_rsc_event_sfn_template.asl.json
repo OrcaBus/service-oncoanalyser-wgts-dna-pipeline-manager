@@ -48,7 +48,7 @@
       "Choices": [
         {
           "Next": "Put WRSC Event",
-          "Condition": "{% /* ${__new_workflow_manager_is_deployed__} */ false %}"
+          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}"
         }
       ],
       "Default": "Put WRSC Event Legacy"
