@@ -2,9 +2,11 @@
   "$schema": "https://json-schema.org/draft/2012-12/schema",
   "$defs": {
     "s3Uri": {
+      "type": "string",
       "pattern": "^s3://[a-zA-Z0-9_-]*/[a-zA-Z0-9_./-]*"
     },
     "s3UriDirectory": {
+      "type": "string",
       "pattern": "^s3://[a-zA-Z0-9_-]*/[a-zA-Z0-9_./-]*/$"
     },
     "genomes": {
