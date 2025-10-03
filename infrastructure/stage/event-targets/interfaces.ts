@@ -8,8 +8,8 @@ import { StepFunctionObject } from '../step-functions/interfaces';
  */
 export type EventBridgeTargetName =
   // Dragen WGTS Succeeded
-  | 'dragenWgtsDnaSucceededEventLegacyToGlueSucceededEvents'
-  | 'dragenWgtsDnaSucceededEventToGlueSucceededEvents'
+  | 'upstreamSucceededEventLegacyToGlueSucceededEvents'
+  | 'upstreamSucceededEventToGlueSucceededEvents'
   // Populate draft data event targets
   | 'draftLegacyToPopulateDraftDataSfnTarget'
   | 'draftToPopulateDraftDataSfnTarget'
@@ -24,8 +24,8 @@ export type EventBridgeTargetName =
 
 export const eventBridgeTargetsNameList: EventBridgeTargetName[] = [
   // Dragen WGTS Succeeded
-  'dragenWgtsDnaSucceededEventLegacyToGlueSucceededEvents',
-  'dragenWgtsDnaSucceededEventToGlueSucceededEvents',
+  'upstreamSucceededEventLegacyToGlueSucceededEvents',
+  'upstreamSucceededEventToGlueSucceededEvents',
   // Populate draft data event targets
   'draftLegacyToPopulateDraftDataSfnTarget',
   'draftToPopulateDraftDataSfnTarget',

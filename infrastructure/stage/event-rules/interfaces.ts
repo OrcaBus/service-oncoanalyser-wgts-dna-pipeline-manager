@@ -5,8 +5,8 @@ import { EventPattern, IEventBus, Rule } from 'aws-cdk-lib/aws-events';
  */
 export type EventBridgeRuleName =
   // Dragen Succeeded
-  | 'dragenWgtsDnaSucceededEventLegacy'
-  | 'dragenWgtsDnaSucceededEvent'
+  | 'upstreamSucceededEventLegacy'
+  | 'upstreamSucceededEvent'
   // Yet to be implemented
   | 'wrscDraftLegacy'
   | 'wrscDraft'
@@ -18,8 +18,8 @@ export type EventBridgeRuleName =
 
 export const eventBridgeRuleNameList: EventBridgeRuleName[] = [
   // Dragen Succeeded event
-  'dragenWgtsDnaSucceededEventLegacy',
-  'dragenWgtsDnaSucceededEvent',
+  'upstreamSucceededEventLegacy',
+  'upstreamSucceededEvent',
   // Yet to be implemented
   'wrscDraftLegacy',
   'wrscDraft',

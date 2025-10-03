@@ -53,11 +53,10 @@ export function buildAllEventBridgeTargets(props: EventBridgeTargetsProps) {
   for (const eventBridgeTargetsName of eventBridgeTargetsNameList) {
     switch (eventBridgeTargetsName) {
       // Dragen Succeeded to Glue
-      case 'dragenWgtsDnaSucceededEventLegacyToGlueSucceededEvents': {
+      case 'upstreamSucceededEventLegacyToGlueSucceededEvents': {
         buildWrscLegacyToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
-            (eventBridgeObject) =>
-              eventBridgeObject.ruleName === 'dragenWgtsDnaSucceededEventLegacy'
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'upstreamSucceededEventLegacy'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
             (sfnObject) => sfnObject.stateMachineName === 'glueSucceededEventsToDraftUpdate'
@@ -65,10 +64,10 @@ export function buildAllEventBridgeTargets(props: EventBridgeTargetsProps) {
         });
         break;
       }
-      case 'dragenWgtsDnaSucceededEventToGlueSucceededEvents': {
+      case 'upstreamSucceededEventToGlueSucceededEvents': {
         buildWrscToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
-            (eventBridgeObject) => eventBridgeObject.ruleName === 'dragenWgtsDnaSucceededEvent'
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'upstreamSucceededEvent'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
             (sfnObject) => sfnObject.stateMachineName === 'glueSucceededEventsToDraftUpdate'
