@@ -102,7 +102,7 @@ export function buildAllEventBridgeTargets(props: EventBridgeTargetsProps) {
 
       // Validate draft data
       case 'draftLegacyToValidateDraftSfnTarget': {
-        buildWrscToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
+        buildWrscLegacyToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
             (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscDraftLegacy'
           )?.ruleObject,

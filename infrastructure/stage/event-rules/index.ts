@@ -152,17 +152,6 @@ function buildUpstreamSucceededWorkflowRunStateChangeLegacyEventRule(
   });
 }
 
-function buildUpstreamSucceededWorkflowRunStateChangeEventRule(
-  scope: Construct,
-  props: BuildDraftRuleProps
-): Rule {
-  return buildEventRule(scope, {
-    ruleName: props.ruleName,
-    eventPattern: buildUpstreamSucceededEventPattern(),
-    eventBus: props.eventBus,
-  });
-}
-
 function buildWorkflowRunStateChangeDraftLegacyEventRule(
   scope: Construct,
   props: BuildDraftRuleProps
@@ -181,6 +170,17 @@ function buildWorkflowRunStateChangeReadyLegacyEventRule(
   return buildEventRule(scope, {
     ruleName: props.ruleName,
     eventPattern: buildWorkflowManagerLegacyReadyEventPattern(),
+    eventBus: props.eventBus,
+  });
+}
+
+function buildUpstreamSucceededWorkflowRunStateChangeEventRule(
+  scope: Construct,
+  props: BuildDraftRuleProps
+): Rule {
+  return buildEventRule(scope, {
+    ruleName: props.ruleName,
+    eventPattern: buildUpstreamSucceededEventPattern(),
     eventBus: props.eventBus,
   });
 }
