@@ -59,7 +59,7 @@
       "Arguments": {
         "Entries": [
           {
-            "Detail": "{% /* Merge workflowRunStateChangeEvent with the status object */\n$merge(\n  $workflowRunStateChangeEvent,\n  {\n    \"status\": $status\n  }\n) %}",
+            "Detail": "{% /* Merge workflowRunStateChangeEvent with the status object */\n$merge([\n  $workflowRunStateChangeEvent,\n  {\n    \"status\": $status\n  }\n]) %}",
             "DetailType": "${__workflow_run_update_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__stack_source__}"
