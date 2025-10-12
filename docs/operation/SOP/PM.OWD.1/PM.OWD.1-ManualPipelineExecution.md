@@ -3,7 +3,7 @@ Manual Pipeline Execution
 - Version: 1.0
 - Contact: Alexis Lucattini, [alexisl@unimelb.edu.au](mailto:alexisl@unimelb.edu.au)
 
-
+Table of Contents
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Procedure](#procedure)

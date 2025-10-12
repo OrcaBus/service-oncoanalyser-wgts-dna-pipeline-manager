@@ -1,6 +1,7 @@
 Manual Pipeline Execution (legacy)
 ================================================================================
 
+Table of Contents
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Procedure](#procedure)
