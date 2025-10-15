@@ -11,6 +11,7 @@ coverage/
 pnpm-lock.yaml
 
 README.md
+docs/**/*.md
 
 cdk.out/
 cdk.json
