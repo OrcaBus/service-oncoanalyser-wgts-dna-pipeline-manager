@@ -153,7 +153,7 @@ export const SSM_SCHEMA_ROOT = path.join(SSM_PARAMETER_PATH_PREFIX, 'schemas');
 export const NEW_WORKFLOW_MANAGER_IS_DEPLOYED: Record<StageName, boolean> = {
   BETA: true,
   GAMMA: true,
-  PROD: false,
+  PROD: true,
 };
 
 // Used to group event rules and step functions
