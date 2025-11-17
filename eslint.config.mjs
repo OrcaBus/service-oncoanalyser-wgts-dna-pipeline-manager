@@ -9,6 +9,7 @@ export default defineConfig([
   { files: ['**/*.{js,mjs,cjs,ts}'], plugins: { js }, extends: ['js/recommended'] },
   tseslint.configs.recommended,
   globalIgnores([
+    '.*',
     'cdk.out/',
     'node_modules/*',
     'app/*', // App folder should have its own eslint config
