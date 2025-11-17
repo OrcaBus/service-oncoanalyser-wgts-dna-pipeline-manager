@@ -166,54 +166,54 @@ get_workflow_run(){
   jq --compact-output --raw-output \
     '
       if (.results | length) > 0 then
-		.results[0]
-	  else
-		empty
-	  end
+        .results[0]
+      else
+        empty
+      end
     '
 }
 
 # Get args
 while [[ $# -gt 0 ]]; do
   case "$1" in
-  	# Help
+    # Help
     -h|--help)
       print_usage
       exit 0
       ;;
-  	# Force boolean
+    # Force boolean
     -f|--force)
       FORCE=true
       shift
       ;;
     # Output URI prefix
     -o|--output-uri-prefix)
-	  OUTPUT_URI_PREFIX="$2"
-	  shift 2
-	  ;;
-	-o=*|--output-uri-prefix=*)
-	  OUTPUT_URI_PREFIX="${1#*=}"
-	  shift
-	  ;;
-	# Log URI prefix
-	-l|--logs-uri-prefix)
-	  LOGS_URI_PREFIX="$2"
-	  shift 2
-	  ;;
-	-l=*|--logs-uri-prefix=*)
-	  LOGS_URI_PREFIX="${1#*=}"
-	  shift
-	  ;;
-	# Project ID
-	-p|--project-id)
-	  PROJECT_ID="$2"
-	  shift 2
-	  ;;
-	-p=*|--project-id=*)
-	  PROJECT_ID="${1#*=}"
-	  shift
-	  ;;
-	# Positional arguments (library IDs)
+    OUTPUT_URI_PREFIX="$2"
+    shift 2
+    ;;
+  -o=*|--output-uri-prefix=*)
+    OUTPUT_URI_PREFIX="${1#*=}"
+    shift
+    ;;
+  # Log URI prefix
+  -l|--logs-uri-prefix)
+    LOGS_URI_PREFIX="$2"
+    shift 2
+    ;;
+  -l=*|--logs-uri-prefix=*)
+    LOGS_URI_PREFIX="${1#*=}"
+    shift
+    ;;
+  # Project ID
+  -p|--project-id)
+    PROJECT_ID="$2"
+    shift 2
+    ;;
+  -p=*|--project-id=*)
+    PROJECT_ID="${1#*=}"
+    shift
+    ;;
+  # Positional arguments (library IDs)
     *)
       LIBRARY_ID_ARRAY+=("$1")
       shift
@@ -236,20 +236,20 @@ echo_stderr "Using workflow: $(jq --raw-output '.orcabusId' <<< "${workflow}")"
 # Get the engine parameters
 engine_parameters=$( \
   jq --null-input --raw-output --compact-output \
-	--arg outputUriPrefix "${OUTPUT_URI_PREFIX}" \
-	--arg logsUriPrefix "${LOGS_URI_PREFIX}" \
-	--arg projectId "${PROJECT_ID}" \
-	--arg portalRunId "${portal_run_id}" \
-	'
-	  # Get the engine parameters
-	  {
-		"outputUri": ( if $outputUriPrefix != "" then ($outputUriPrefix + $portalRunId + "/") else "" end ),
-		"logsUri": ( if $logsUriPrefix != "" then ($logsUriPrefix + $portalRunId + "/") else "" end ),
-		"projectId": $projectId
-	  } |
-	  # Remove empty values
-	  with_entries(select(.value != ""))
-	' \
+  --arg outputUriPrefix "${OUTPUT_URI_PREFIX}" \
+  --arg logsUriPrefix "${LOGS_URI_PREFIX}" \
+  --arg projectId "${PROJECT_ID}" \
+  --arg portalRunId "${portal_run_id}" \
+  '
+    # Get the engine parameters
+    {
+      "outputUri": ( if $outputUriPrefix != "" then ($outputUriPrefix + $portalRunId + "/") else "" end ),
+      "logsUri": ( if $logsUriPrefix != "" then ($logsUriPrefix + $portalRunId + "/") else "" end ),
+      "projectId": $projectId
+    } |
+    # Remove empty values
+    with_entries(select(.value != ""))
+  ' \
 )
 
 # Generate the event
@@ -261,22 +261,22 @@ lambda_payload="$( \
     --argjson libraries "$(get_linked_libraries)" \
     --argjson engineParameters "${engine_parameters}" \
     '
-	  {
-		"status": "DRAFT",
-		"timestamp": (now | todateiso8601),
-		"workflow": $workflow,
-		"workflowRunName": ("umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
-		"portalRunId": $portalRunId,
-		"libraries": $libraries,
-	  } |
-	  if ( ($engineParameters | length) > 0 ) then
-	    .["payload"] = {
-	      "version": $payloadVersion,
-	      "data": {
-	        "engineParameters": $engineParameters
-	      }
-	    }
-	  end
+    {
+      "status": "DRAFT",
+      "timestamp": (now | todateiso8601),
+      "workflow": $workflow,
+      "workflowRunName": ("umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
+      "portalRunId": $portalRunId,
+      "libraries": $libraries,
+      } |
+      if ( ($engineParameters | length) > 0 ) then
+        .["payload"] = {
+          "version": $payloadVersion,
+          "data": {
+            "engineParameters": $engineParameters
+          }
+        }
+      end
     ' \
 )"
 
@@ -292,6 +292,9 @@ if [[ "${FORCE}" == "false" ]]; then
     fi
 fi
 
+# Set the trap
+trap 'rm -f lambda_data_pipe' EXIT
+
 # Push the event to EventBridge
 mkfifo lambda_data_pipe
 errors_json="$(mktemp "errors.XXXXXX.json")"
@@ -305,16 +308,19 @@ aws lambda invoke \
   lambda_data_pipe 1>/dev/null & \
 jq --raw-output \
   '
-    if .statusCode != 200 then
-	  .body | fromjson
-	else
-	  empty
-	end
+  if .statusCode != 200 then
+    .body | fromjson
+  else
+    empty
+  end
   ' \
   < lambda_data_pipe \
   > "${errors_json}" & \
 wait
 rm lambda_data_pipe
+
+# Remove trap
+trap - EXIT
 
 if [[ -s "${errors_json}" ]]; then
   echo_stderr "Error pushing event to Lambda Function:"
@@ -327,19 +333,28 @@ fi
 
 echo_stderr "Waiting for the workflow run to be registered by the workflow manager"
 
+max_attempts=6  # 1 minute with 10-second intervals
+attempts=0
 while :; do
+  # Check if we've exceeded max attempts
+  if [[ "${attempts}" -ge "${max_attempts}" ]]; then
+	echo_stderr "Exceeded maximum attempts (${max_attempts}) to check for workflow run registration"
+	exit 1
+  fi
+
   workflow_run_object="$( \
-  	get_workflow_run "${portal_run_id}"
+    get_workflow_run "${portal_run_id}"
   )"
 
   # Check with the workflow manager for the workflow run object
   if [[ -n "${workflow_run_object}" ]]; then
     workflow_run_orcabus_id="$(jq --raw-output '.orcabusId' <<< "${workflow_run_object}")"
-	echo_stderr "Workflow run registered with ID: ${workflow_run_orcabus_id}"
-	break
+    echo_stderr "Workflow run registered with ID: ${workflow_run_orcabus_id}"
+    break
   else
-	echo_stderr "Workflow run not yet registered, waiting 10 seconds..."
-	sleep 10
+    echo_stderr "Workflow run not yet registered, waiting 10 seconds..."
+    sleep 10
+	attempts="$((attempts + 1))"
   fi
 
 done
