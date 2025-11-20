@@ -25,7 +25,7 @@
     "@eslint/js": "^9.39.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.19.1",
-    "aws-cdk": "^2.1031.2",
+    "aws-cdk": "^2.1032.0",
     "cdk-nag": "^2.37.55",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
@@ -35,11 +35,11 @@
     "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.4"
+    "typescript-eslint": "^8.47.0"
   },
   "dependencies": {
     "@orcabus/platform-cdk-constructs": "0.0.79",
-    "aws-cdk-lib": "^2.224.0",
+    "aws-cdk-lib": "^2.225.0",
     "constructs": "^10.4.3"
   }
 }
