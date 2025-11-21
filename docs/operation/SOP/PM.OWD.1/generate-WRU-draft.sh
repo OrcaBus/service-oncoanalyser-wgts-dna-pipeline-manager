@@ -207,7 +207,7 @@ while [[ $# -gt 0 ]]; do
     LOGS_URI_PREFIX="${1#*=}"
     shift
     ;;
-  # Log URI prefix
+  # Cache URI prefix
   -c|--cache-uri-prefix)
     CACHE_URI_PREFIX="$2"
     shift 2
