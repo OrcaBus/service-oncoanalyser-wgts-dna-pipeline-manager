@@ -19,6 +19,7 @@ WORKFLOW_VERSION="2.2.0"
 EXECUTION_ENGINE="ICA"
 CODE_VERSION="b94cbc7"
 PAYLOAD_VERSION="2025.08.05"
+ANALYSIS_STORAGE_SIZE=""
 
 # Library id array
 LIBRARY_ID_ARRAY=()
@@ -37,6 +38,7 @@ generate-WRU-draft.sh (library_id)...
                       [-l | --logs-uri-prefix <s3_uri>]
                       [-c | --cache-uri-prefix <s3_uri>]
                       [-p | --project-id <project_id>]
+                      [-s | --analysis-storage-size <analysis_storage_size>]
 
 Description:
 Run this script to generate a draft WorkflowRunUpdate event for the specified library IDs.
@@ -45,12 +47,13 @@ Positional arguments:
   library_id:   One or more library IDs to link to the WorkflowRunUpdate event.
 
 Keyword arguments:
-  -h | --help:               Print this help message and exit.
-  -f | --force:              Don't confirm before pushing the event to EventBridge.
-  -o | --output-uri-prefix:  (Optional) S3 URI for outputs (must end with a slash).
-  -l | --logs-uri-prefix:    (Optional) S3 URI for logs (must end with a slash).
-  -c | --cache-uri-prefix:   (Optional) S3 URI for cache directory (must end with a slash).
-  -p | --project-id:         (Optional) ICAv2 Project ID to associate with the workflow run
+  -h | --help:                 Print this help message and exit.
+  -f | --force:                Don't confirm before pushing the event to EventBridge.
+  -o | --output-uri-prefix:    (Optional) S3 URI for outputs (must end with a slash).
+  -l | --logs-uri-prefix:      (Optional) S3 URI for logs (must end with a slash).
+  -c | --cache-uri-prefix:     (Optional) S3 URI for cache directory (must end with a slash).
+  -p | --project-id:           (Optional) ICAv2 Project ID to associate with the workflow run
+  -s | --analysis-storage-size (Optional) Set the analysis storage size
 
 Environment:
   AWS_PROFILE:  (Optional) The AWS CLI profile to use for authentication.
@@ -225,6 +228,15 @@ while [[ $# -gt 0 ]]; do
     PROJECT_ID="${1#*=}"
     shift
     ;;
+  # Analysis Storage Size
+  -s=|--analysis-storage-size)
+    ANALYSIS_STORAGE_SIZE="$2"
+    shift 2
+    ;;
+  -s=*|--analysis-storage-size=*)
+    ANALYSIS_STORAGE_SIZE="${1#*=}"
+    shift
+	;;
   # Positional arguments (library IDs)
     *)
       LIBRARY_ID_ARRAY+=("$1")
@@ -253,13 +265,15 @@ engine_parameters=$( \
   --arg cacheUriPrefix "${CACHE_URI_PREFIX}" \
   --arg projectId "${PROJECT_ID}" \
   --arg portalRunId "${portal_run_id}" \
+  --arg analysisStorageSize "${ANALYSIS_STORAGE_SIZE}" \
   '
     # Get the engine parameters
     {
       "outputUri": ( if $outputUriPrefix != "" then ($outputUriPrefix + $portalRunId + "/") else "" end ),
       "logsUri": ( if $logsUriPrefix != "" then ($logsUriPrefix + $portalRunId + "/") else "" end ),
       "cacheUri": ( if $cacheUriPrefix != "" then ($cacheUriPrefix + $portalRunId + "/") else "" end ),
-      "projectId": $projectId
+      "projectId": $projectId,
+      "analysisStorageSize": $analysisStorageSize
     } |
     # Remove empty values
     with_entries(select(.value != ""))
