@@ -53,7 +53,8 @@ Keyword arguments:
   -l | --logs-uri-prefix:        (Optional) S3 URI for logs (must end with a slash).
   -c | --cache-uri-prefix:       (Optional) S3 URI for cache directory (must end with a slash).
   -p | --project-id:             (Optional) ICAv2 Project ID to associate with the workflow run
-  -s | --analysis-storage-size:  (Optional) Set the analysis storage size
+  -s | --analysis-storage-size:  (Optional) Set the analysis storage size, default SMALL, one of:
+                                  - SMALL / MEDIUM / LARGE / XLARGE / 2XLARGE / 3XLARGE
 
 Environment:
   AWS_PROFILE:  (Optional) The AWS CLI profile to use for authentication.
