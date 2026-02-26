@@ -1,6 +1,5 @@
 /* Directory constants */
 import path from 'path';
-import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
 import { Genome, NotInBuiltInHmfReferenceGenomesType, WorkflowVersionType } from './interfaces';
 import { DATA_SCHEMA_REGISTRY_NAME } from '@orcabus/platform-cdk-constructs/shared-config/event-bridge';
 
@@ -158,13 +157,6 @@ export const SUCCEEDED_STATUS = 'SUCCEEDED';
 /* Schema constants */
 export const SCHEMA_REGISTRY_NAME = DATA_SCHEMA_REGISTRY_NAME;
 export const SSM_SCHEMA_ROOT = path.join(SSM_PARAMETER_PATH_PREFIX, 'schemas');
-
-/* Future proofing */
-export const NEW_WORKFLOW_MANAGER_IS_DEPLOYED: Record<StageName, boolean> = {
-  BETA: true,
-  GAMMA: true,
-  PROD: true,
-};
 
 // Used to group event rules and step functions
 export const STACK_PREFIX = 'orca-onco-wgts-dna';

@@ -37,23 +37,13 @@
           "JitterStrategy": "FULL"
         }
       ],
-      "Next": "Is new workflow manager deployed",
+      "Next": "Put WRU Event",
       "Assign": {
         "workflowRunStateChangeEvent": "{% $states.result.Payload.workflowRunStateChangeEvent %}",
         "engineParameters": "{% /* Includes the cache uri */ $states.result.Payload.workflowRunStateChangeEvent.payload.data.engineParameters %}"
       }
     },
-    "Is new workflow manager deployed": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Next": "Put WRSC Event",
-          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}"
-        }
-      ],
-      "Default": "Put WRSC Event Legacy"
-    },
-    "Put WRSC Event": {
+    "Put WRU Event": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Arguments": {
@@ -61,21 +51,6 @@
           {
             "Detail": "{% /* Merge workflowRunStateChangeEvent with the status object */\n$merge([\n  $workflowRunStateChangeEvent,\n  {\n    \"status\": $status\n  }\n]) %}",
             "DetailType": "${__workflow_run_update_event_detail_type__}",
-            "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
-          }
-        ]
-      },
-      "End": true
-    },
-    "Put WRSC Event Legacy": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Arguments": {
-        "Entries": [
-          {
-            "Detail": "{% /* Merge workflowRunStateChangeEvent with the status object */\n$merge([\n  $workflowRunStateChangeEvent,\n  {\n    \"status\": $status\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] |\n %}",
-            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__stack_source__}"
           }

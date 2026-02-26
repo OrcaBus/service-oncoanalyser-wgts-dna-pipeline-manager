@@ -1019,23 +1019,12 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Next": "New workflow manager deployed",
+          "Next": "Put DRAFT update event",
           "Condition": "{% $states.input.hasChanged %}",
           "Comment": "Payload has changed"
         }
       ],
       "Default": "Skip push event"
-    },
-    "New workflow manager deployed": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
-          "Comment": "New Workflow Manager is Deployed",
-          "Next": "Put DRAFT update event"
-        }
-      ],
-      "Default": "Push DRAFT Event (legacy)"
     },
     "Put DRAFT update event": {
       "Type": "Task",
@@ -1054,21 +1043,6 @@
     },
     "Skip push event": {
       "Type": "Pass",
-      "End": true
-    },
-    "Push DRAFT Event (legacy)": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Arguments": {
-        "Entries": [
-          {
-            "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $workflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": ($libraries ~> | $ | {}, [\"readsets\"] |)\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
-            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
-            "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
-          }
-        ]
-      },
       "End": true
     }
   },

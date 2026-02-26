@@ -66,8 +66,6 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
     definitionSubstitutions['__stack_source__'] = EVENT_SOURCE;
     definitionSubstitutions['__ready_event_status__'] = READY_STATUS;
     definitionSubstitutions['__draft_event_status__'] = DRAFT_STATUS;
-    definitionSubstitutions['__new_workflow_manager_is_deployed__'] =
-      props.isNewWorkflowManagerDeployed.toString();
     definitionSubstitutions['__default_payload_version__'] = DEFAULT_PAYLOAD_VERSION;
     definitionSubstitutions['__fastq_sync_detail_type__'] = FASTQ_SYNC_DETAIL_TYPE;
 
