@@ -5,26 +5,20 @@ import { EventPattern, IEventBus, Rule } from 'aws-cdk-lib/aws-events';
  */
 export type EventBridgeRuleName =
   // Upstream Succeeded (Dragen WGTS DNA)
-  | 'upstreamSucceededEventLegacy'
   | 'upstreamSucceededEvent'
   // Draft Rules
-  | 'wrscDraftLegacy'
   | 'wrscDraft'
   // Pre-ready
-  | 'wrscReadyLegacy'
   | 'wrscReady'
   // Post-submitted
   | 'icav2WesAnalysisStateChange';
 
 export const eventBridgeRuleNameList: EventBridgeRuleName[] = [
   // Upstream Succeeded (Dragen WGTS DNA)
-  'upstreamSucceededEventLegacy',
   'upstreamSucceededEvent',
   // Draft Rules
-  'wrscDraftLegacy',
   'wrscDraft',
   // Pre-ready
-  'wrscReadyLegacy',
   'wrscReady',
   // Post-submitted
   'icav2WesAnalysisStateChange',
