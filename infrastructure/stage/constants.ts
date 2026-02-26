@@ -15,7 +15,7 @@ export const WORKFLOW_NAME = 'oncoanalyser-wgts-dna';
 // However, because this workflow has the same workflow name as the
 // existing production workflow, we need to filter on the payload version
 // to prevent the wrong service from being triggered
-export const DEFAULT_WORKFLOW_VERSION: WorkflowVersionType = '2.1.0';
+export const DEFAULT_WORKFLOW_VERSION: WorkflowVersionType = '2.2.0';
 export const DEFAULT_PAYLOAD_VERSION = '2025.08.05';
 
 export const WORKFLOW_LOGS_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}logs/${WORKFLOW_NAME}/`;
@@ -32,6 +32,7 @@ export const WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP: Record<
   '2.0.0': 'a64126df-d8b2-4ec0-99df-1154f44a74ef',
   '2.1.0': 'ab6e1d62-1b5a-4b24-86b8-81ccf4bdc7a2',
   '2.2.0': '40b8005e-1473-4257-9949-cc8b42750cf0',
+  '2.3.0': 'fb07badf-dcba-4a8c-97a9-12e842b97dfb', // Experimental atm
 };
 
 export const WORKFLOW_VERSION_TO_DEFAULT_HMF_REFERENCE_PATHS_MAP: Record<
@@ -44,6 +45,8 @@ export const WORKFLOW_VERSION_TO_DEFAULT_HMF_REFERENCE_PATHS_MAP: Record<
     's3://reference-data-503977275616-ap-southeast-2/refdata/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.1.0--1/',
   '2.2.0':
     's3://reference-data-503977275616-ap-southeast-2/refdata/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.2.0--3/',
+  '2.3.0':
+    's3://reference-data-503977275616-ap-southeast-2/refdata/hartwig/hmf-reference-data/hmftools/hmf_pipeline_resources.38_v2.3.0--2/',
 };
 
 export const GENOMES_MAP: Record<NotInBuiltInHmfReferenceGenomesType, Genome> = {
@@ -78,6 +81,13 @@ export const DEFAULT_WORKFLOW_INPUTS_BY_VERSION_MAP: Record<WorkflowVersionType,
     forceGenome: true,
   },
   '2.2.0': {
+    mode: 'wgts',
+    genome: 'GRCh38_umccr',
+    genomeVersion: '38',
+    genomeType: 'alt',
+    forceGenome: true,
+  },
+  '2.3.0': {
     mode: 'wgts',
     genome: 'GRCh38_umccr',
     genomeVersion: '38',

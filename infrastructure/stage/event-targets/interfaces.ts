@@ -8,32 +8,24 @@ import { StepFunctionObject } from '../step-functions/interfaces';
  */
 export type EventBridgeTargetName =
   // Dragen WGTS Succeeded
-  | 'upstreamSucceededEventLegacyToGlueSucceededEvents'
   | 'upstreamSucceededEventToGlueSucceededEvents'
   // Populate draft data event targets
-  | 'draftLegacyToPopulateDraftDataSfnTarget'
   | 'draftToPopulateDraftDataSfnTarget'
   // Validate draft to ready
-  | 'draftLegacyToValidateDraftSfnTarget'
   | 'draftToValidateDraftSfnTarget'
   // Ready to ICAv2 WES Submitted
-  | 'readyLegacyToIcav2WesSubmittedSfnTarget'
   | 'readyToIcav2WesSubmittedSfnTarget'
   // Post submission
   | 'icav2WesAnalysisStateChangeEventToWrscSfnTarget';
 
 export const eventBridgeTargetsNameList: EventBridgeTargetName[] = [
   // Dragen WGTS Succeeded
-  'upstreamSucceededEventLegacyToGlueSucceededEvents',
   'upstreamSucceededEventToGlueSucceededEvents',
   // Populate draft data event targets
-  'draftLegacyToPopulateDraftDataSfnTarget',
   'draftToPopulateDraftDataSfnTarget',
   // Validate draft to ready
-  'draftLegacyToValidateDraftSfnTarget',
   'draftToValidateDraftSfnTarget',
   // Ready to ICAv2 WES Submitted
-  'readyLegacyToIcav2WesSubmittedSfnTarget',
   'readyToIcav2WesSubmittedSfnTarget',
   // Post submission
   'icav2WesAnalysisStateChangeEventToWrscSfnTarget',
