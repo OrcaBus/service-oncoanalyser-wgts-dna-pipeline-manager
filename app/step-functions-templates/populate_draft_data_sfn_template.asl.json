@@ -773,7 +773,7 @@
     },
     "Add reference data": {
       "Type": "Parallel",
-      "Next": "Make new WRU event",
+      "Next": "Get analysis storage size",
       "Branches": [
         {
           "StartAt": "Hmf Reference data provided",
@@ -842,6 +842,112 @@
       ],
       "Assign": {
         "draftInputs": "{% [\n  /* Start with the draft inputs + sequence data inputs */\n  $draftInputs,\n  /* Combine the states results */\n  $merge($states.result)\n] \n/* Merge Old and new */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
+      }
+    },
+    "Get analysis storage size": {
+      "Type": "Parallel",
+      "Next": "Make new WRU event",
+      "Branches": [
+        {
+          "StartAt": "Get fastq id list by rgid list",
+          "States": {
+            "Get fastq id list by rgid list": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Arguments": {
+                "FunctionName": "${__get_fastq_id_list_from_rgid_list_lambda_function_arn__}",
+                "Payload": {
+                  "fastqRgidList": "{% $libraries.(readsets).(rgid) %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Wait for readcount availability",
+              "Output": {
+                "fastqIdList": "{% $states.result.Payload.fastqIdList %}"
+              }
+            },
+            "Wait for readcount availability": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::events:putEvents.waitForTaskToken",
+              "Arguments": {
+                "Entries": [
+                  {
+                    "Detail": {
+                      "taskToken": "{% $states.context.Task.Token %}",
+                      "payload": {
+                        "fastqIdList": "{% $states.input.fastqIdList %}",
+                        "requirements": {
+                          "hasReadCountInformation": true
+                        }
+                      }
+                    },
+                    "DetailType": "${__fastq_sync_detail_type__}",
+                    "EventBusName": "${__event_bus_name__}",
+                    "Source": "${__stack_source__}"
+                  }
+                ]
+              },
+              "Next": "Get analysis storage size from basecount estimate",
+              "Output": {
+                "fastqIdList": "{% $states.input.fastqIdList %}"
+              }
+            },
+            "Get analysis storage size from basecount estimate": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Arguments": {
+                "FunctionName": "${__get_analysis_storage_size_from_basecount_est_lambda_function_arn__}",
+                "Payload": {
+                  "fastqIdList": "{% $states.input.fastqIdList %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true,
+              "Output": {
+                "analysisStorageSize": "{% $states.result.Payload.analysisStorageSize %}"
+              }
+            }
+          }
+        },
+        {
+          "StartAt": "Placeholder (analysis storage size)",
+          "States": {
+            "Placeholder (analysis storage size)": {
+              "Type": "Pass",
+              "End": true,
+              "Output": {}
+            }
+          }
+        }
+      ],
+      "Assign": {
+        "engineParameters": "{% [\n  $engineParameters,\n  {\n    \"analysisStorageSize\": $states.result[0].analysisStorageSize\n  }\n] ~> \n$merge %}"
       }
     },
     "Make new WRU event": {
