@@ -10,6 +10,9 @@ export class StatelessStack extends cdk.Stack {
     super(scope, id, props);
 
     new DeploymentStackPipeline(this, 'StatelessOncoanalyserWgtsDnaPipeline', {
+      unitAppTestConfig: {
+        command: [],
+      },
       githubBranch: 'main',
       githubRepo: REPO_NAME,
       stack: StatelessApplicationStack,
