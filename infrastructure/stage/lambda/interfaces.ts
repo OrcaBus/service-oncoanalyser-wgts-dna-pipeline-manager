@@ -9,6 +9,7 @@ export type LambdaName =
   | 'getWorkflowRunObject'
   | 'generateWruEventObjectWithMergedData'
   | 'getLatestPayloadFromPortalRunId'
+  | 'getAnalysisStorageSizeFromBasecountEst'
   // Glue lambdas
   // Draft Builder lambdas
   | 'getFastqIdListFromRgidList'
@@ -31,6 +32,7 @@ export const lambdaNameList: LambdaName[] = [
   'getWorkflowRunObject',
   'generateWruEventObjectWithMergedData',
   'getLatestPayloadFromPortalRunId',
+  'getAnalysisStorageSizeFromBasecountEst',
   // Glue lambdas
   // Draft Builder lambdas
   'getFastqIdListFromRgidList',
@@ -74,6 +76,9 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
     needsOrcabusApiTools: true,
   },
   getLatestPayloadFromPortalRunId: {
+    needsOrcabusApiTools: true,
+  },
+  getAnalysisStorageSizeFromBasecountEst: {
     needsOrcabusApiTools: true,
   },
   // Glue lambdas
