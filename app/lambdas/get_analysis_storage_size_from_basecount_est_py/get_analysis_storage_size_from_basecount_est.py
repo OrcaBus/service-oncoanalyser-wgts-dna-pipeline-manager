@@ -56,13 +56,13 @@ def handler(event, context):
         fastq_id_list
     ))
 
-    # Get the read count
-    read_count = sum(map(
+    # Get the total base count estimate
+    basecount_sum = sum(map(
         lambda fastq_obj_iter_: fastq_obj_iter_.get('baseCountEst', 0),
         fastq_objs
     ))
 
     # Return the storage size
     return {
-        "analysisStorageSize": get_analysis_storage_size_from_basecount_est(read_count)
+        "analysisStorageSize": get_analysis_storage_size_from_basecount_est(basecount_sum)
     }

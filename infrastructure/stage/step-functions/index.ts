@@ -18,6 +18,7 @@ import {
   DRAFT_STATUS,
   DRAGEN_WGTS_DNA_WORKFLOW_NAME,
   EVENT_SOURCE,
+  FASTQ_SYNC_DETAIL_TYPE,
   ICAV2_WES_REQUEST_DETAIL_TYPE,
   READY_STATUS,
   STACK_PREFIX,
@@ -68,6 +69,7 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
     definitionSubstitutions['__new_workflow_manager_is_deployed__'] =
       props.isNewWorkflowManagerDeployed.toString();
     definitionSubstitutions['__default_payload_version__'] = DEFAULT_PAYLOAD_VERSION;
+    definitionSubstitutions['__fastq_sync_detail_type__'] = FASTQ_SYNC_DETAIL_TYPE;
 
     if (sfnRequirements.needsSsmParameterStoreAccess) {
       // Default parameter paths

@@ -855,9 +855,9 @@
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Arguments": {
-                "FunctionName": "${__get_fastq_id_list_by_rgid_list_lambda_function_arn__}",
+                "FunctionName": "${__get_fastq_id_list_from_rgid_list_lambda_function_arn__}",
                 "Payload": {
-                  "rgidList": "{% $libraries.(readsets).(rgid) %}"
+                  "fastqRgidList": "{% $libraries.(readsets).(rgid) %}"
                 }
               },
               "Retry": [
