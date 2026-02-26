@@ -18,9 +18,9 @@ export class StatelessStack extends cdk.Stack {
       stack: StatelessApplicationStack,
       stackName: 'StatelessOncoanalyserWgtsDnaPipelineManager',
       stackConfig: {
-        beta: getStatelessStackProps('BETA'),
-        gamma: getStatelessStackProps('GAMMA'),
-        prod: getStatelessStackProps('PROD'),
+        beta: getStatelessStackProps(),
+        gamma: getStatelessStackProps(),
+        prod: getStatelessStackProps(),
       },
       pipelineName: 'OrcaBus-StatelessOncoanalyserWgtsDnaPipeline',
       cdkSynthCmd: ['pnpm install --frozen-lockfile --ignore-scripts', 'pnpm cdk-stateless synth'],

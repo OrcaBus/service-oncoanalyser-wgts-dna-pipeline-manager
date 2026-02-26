@@ -117,36 +117,6 @@
       "Type": "Pass",
       "End": true
     },
-    "Put WRU Update (new)": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Arguments": {
-        "Entries": [
-          {
-            "Detail": "{% $merge([\n  $workflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime\n  }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
-            "DetailType": "${__workflow_run_update_event_detail_type__}",
-            "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
-          }
-        ]
-      },
-      "End": true
-    },
-    "Put WRSC Draft Event (legacy)": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Arguments": {
-        "Entries": [
-          {
-            "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $workflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": ($libraries ~> | $ | {}, [\"readsets\"] |)\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
-            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
-            "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
-          }
-        ]
-      },
-      "End": true
-    },
     "No changes": {
       "Type": "Pass",
       "End": true
@@ -357,22 +327,26 @@
       "Choices": [
         {
           "Condition": "{% $states.input.hasChanged ? true : false %}",
-          "Next": "New workflow manager is deployed",
+          "Next": "Put WRU Update",
           "Comment": "Payload differs to previous one"
         }
       ],
       "Default": "No changes"
     },
-    "New workflow manager is deployed": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
-          "Next": "Put WRU Update (new)",
-          "Comment": "Is the new workflow manager deployed in this account"
-        }
-      ],
-      "Default": "Put WRSC Draft Event (legacy)"
+    "Put WRU Update": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $merge([\n  $workflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime\n  }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
+            "DetailType": "${__workflow_run_update_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
     }
   },
   "QueryLanguage": "JSONata"

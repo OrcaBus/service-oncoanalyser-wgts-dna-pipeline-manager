@@ -26,9 +26,6 @@ export interface StatelessApplicationStackConfig {
   // Event Stuff
   eventBusName: string;
 
-  // Workflow manager stuff
-  isNewWorkflowManagerDeployed: boolean;
-
   // SSM Parameter paths
   ssmParameterPaths: SsmParameterPaths;
 }
