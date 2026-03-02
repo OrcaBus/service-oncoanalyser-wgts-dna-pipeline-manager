@@ -102,6 +102,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'getWorkflowRunObject',
     'generateWruEventObjectWithMergedData',
     'getLatestPayloadFromPortalRunId',
+    'getAnalysisStorageSizeFromBasecountEst',
     // Draft Builder lambdas
     'getFastqIdListFromRgidList',
     'getFastqRgidsFromLibraryId',
