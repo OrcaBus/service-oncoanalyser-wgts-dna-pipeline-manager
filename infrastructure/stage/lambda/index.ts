@@ -103,6 +103,10 @@ function buildLambda(scope: Construct, props: BuildLambdaProps): LambdaObject {
   // Needs Workflow Env vars
   if (lambdaRequirements.needsWorkflowEnvVars) {
     lambdaFunction.addEnvironment('WORKFLOW_NAME', WORKFLOW_NAME);
+  }
+
+  // Needs bucket env vars
+  if (lambdaRequirements.needsBucketEnvVars) {
     lambdaFunction.addEnvironment('REF_DATA_BUCKET_NAME', props.refDataBucketName);
     lambdaFunction.addEnvironment('TEST_DATA_BUCKET_NAME', props.testDataBucketName);
   }

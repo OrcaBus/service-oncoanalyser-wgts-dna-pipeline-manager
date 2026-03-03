@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Post schema validation for tso500 ctdna workflows
+Post schema validation for oncoanalyser wgts dna workflows
 
 Performs the following steps:
 * Validate inputs, ensure each uri is available in the project context.
@@ -107,14 +107,19 @@ def validate_inputs(
     :param project_id: The ICAv2 project id to validate against.
     :param project_prefix: The ICAv2 project prefix
     """
-    # Get all fastq uris from the inputs
+    # Initalise the data uris list
     data_uris = []
+    # Get all fastq uris from the inputs
+    # (we will support oncoanalyser from fastq in a later iteration)
     for fastq_obj in inputs.get("fastqListRows", []):
         # We filter out 'None' values later
         data_uris.extend([
             fastq_obj.get("read1FileUri"),
             fastq_obj.get("read2FileUri")
         ])
+    # Get all bam inputs
+    for key in ["tumorDnaBamUri", "normalDnaBamUri"]:
+        data_uris.append(inputs.get(key))
 
     # Remove empty / null values from list
     data_uris = list(filter(

@@ -41,7 +41,7 @@ def handler(event, context):
     # Get the libraries / and/or the analysis run id
     # The analysis run id takes preference when making queries
     analysis_run_id = event.get('analysisRunId', None)
-    libraries = event.get('libraries', None)
+    libraries = event.get('libraries', [])
     rgid_list = event.get('rgidList', None)
 
     # Now we have our workflows, filter to the correct workflow name (and version if provided)
@@ -91,12 +91,6 @@ def handler(event, context):
             lambda workflow_iter_: workflow_iter_['currentState']['status'] == workflow_status,
             workflows_list
         ))
-
-    # Filter by status
-    workflows_list = list(filter(
-        lambda workflow_iter_: workflow_iter_['currentState']['status'] == workflow_status,
-        workflows_list
-    ))
 
     if len(workflows_list) == 0:
         return {
