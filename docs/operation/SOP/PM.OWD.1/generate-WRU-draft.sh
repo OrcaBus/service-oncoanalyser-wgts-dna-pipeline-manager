@@ -39,6 +39,8 @@ generate-WRU-draft.sh (library_id)...
                       [-c | --cache-uri-prefix <s3_uri>]
                       [-p | --project-id <project_id>]
                       [-s | --analysis-storage-size <analysis_storage_size>]
+                      [--workflow-version <workflow_version>]
+                      [--code-version <code_version>]
 
 Description:
 Run this script to generate a draft WorkflowRunUpdate event for the specified library IDs.
@@ -55,6 +57,8 @@ Keyword arguments:
   -p | --project-id:             (Optional) ICAv2 Project ID to associate with the workflow run
   -s | --analysis-storage-size:  (Optional) Set the analysis storage size, default SMALL, one of:
                                   - SMALL / MEDIUM / LARGE / XLARGE / 2XLARGE / 3XLARGE
+  --workflow-version:            (Optional) Override the default workflow version.
+  --code-version:                (Optional) Override the default code version.
 
 Environment:
   AWS_PROFILE:  (Optional) The AWS CLI profile to use for authentication.
@@ -62,9 +66,9 @@ Environment:
 
 Example usage:
 bash generate-WRU-draft.sh tumor_library_id normal_library_id
-bash generate-WRU-draft.sh tumor_library_id normal_library_id \\
-  --output-uri-prefix s3://project-bucket/analysis/dragen-wgts-dna/ \\
-  --logs-uri-prefix s3://project-bucket/logs/dragen-wgts-dna \\
+bash generate-WRU-draft.sh tumor_library_id normal_library_id \
+  --output-uri-prefix s3://project-bucket/analysis/dragen-wgts-dna/ \
+  --logs-uri-prefix s3://project-bucket/logs/dragen-wgts-dna \
   --project-id project-uuid-1234-abcd
 
 "
@@ -79,12 +83,32 @@ get_hostname_from_ssm(){
 }
 
 get_orcabus_token(){
-  aws secretsmanager get-secret-value \
-    --secret-id orcabus/token-service-jwt \
-    --output json \
-    --query SecretString | \
-  jq --raw-output \
-    'fromjson | .id_token'
+  : '
+  Get the OrcaBus token from the environment variable ORCABUS_TOKEN,
+or if that is not set, get it from AWS Secrets Manager under the secret name
+  '
+  local orcabus_token
+
+  # Check if the ORCABUS_TOKEN environment variable is set,
+  # if not get the token from AWS Secrets Manager
+  if [[ ! -v ORCABUS_TOKEN ]]; then
+    if ! orcabus_token="$( \
+      aws secretsmanager get-secret-value \
+        --secret-id orcabus/token-service-jwt \
+        --output json \
+        --query SecretString | \
+      jq --raw-output \
+        'fromjson | .id_token'
+    )"; then
+      echo_stderr "Could not get secret 'orcabus/token-service-jwt', please set the environment variable ORCABUS_TOKEN instead"
+      return 1
+    fi
+  else
+    orcabus_token="${ORCABUS_TOKEN}"
+  fi
+
+  # Return the token
+  echo "${orcabus_token}"
 }
 
 get_library_obj_from_library_id(){
@@ -238,6 +262,24 @@ while [[ $# -gt 0 ]]; do
     ANALYSIS_STORAGE_SIZE="${1#*=}"
     shift
     ;;
+  # Workflow version
+  --workflow-version)
+    WORKFLOW_VERSION="$2"
+    shift 2
+    ;;
+  --workflow-version=*)
+    WORKFLOW_VERSION="${1#*=}"
+    shift
+    ;;
+  # Code version
+  --code-version)
+    CODE_VERSION="$2"
+    shift 2
+    ;;
+  --code-version=*)
+    CODE_VERSION="${1#*=}"
+    shift
+    ;;
   # Positional arguments (library IDs)
   *)
     LIBRARY_ID_ARRAY+=("$1")
@@ -367,8 +409,8 @@ attempts=0
 while :; do
   # Check if we've exceeded max attempts
   if [[ "${attempts}" -ge "${max_attempts}" ]]; then
-	echo_stderr "Exceeded maximum attempts (${max_attempts}) to check for workflow run registration"
-	exit 1
+    echo_stderr "Exceeded maximum attempts (${max_attempts}) to check for workflow run registration"
+    exit 1
   fi
 
   workflow_run_object="$( \
@@ -383,7 +425,7 @@ while :; do
   else
     echo_stderr "Workflow run not yet registered, waiting 10 seconds..."
     sleep 10
-	attempts="$((attempts + 1))"
+    attempts="$((attempts + 1))"
   fi
 
 done

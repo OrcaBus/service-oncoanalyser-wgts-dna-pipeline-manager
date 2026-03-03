@@ -6,13 +6,13 @@
       "Type": "Pass",
       "Next": "Validate draft data",
       "Assign": {
-        "draftDetail": "{% $states.input %}",
-        "draftLibrariesList": "{% $states.input.libraries %}",
-        "draftPayload": "{% (\n  $states.input.payload ? \n  $states.input.payload : {\n    \"version\": \"${__default_payload_version__}\"\n  }\n) %}",
-        "draftData": "{% $states.input.payload.data ? $states.input.payload.data : {} %}",
-        "draftEngineParameters": "{% $states.input.payload.data.engineParameters ? $states.input.payload.data.engineParameters : {} %}",
-        "draftTags": "{% $states.input.payload.data.tags ? $states.input.payload.data.tags : {} %}",
-        "draftInputs": "{% $states.input.payload.data.inputs ? $states.input.payload.data.inputs : {} %}"
+        "detail": "{% $states.input %}",
+        "libraries": "{% $states.input.libraries %}",
+        "payload": "{% (\n  $states.input.payload ? \n  $states.input.payload : {\n    \"version\": \"${__default_payload_version__}\"\n  }\n) %}",
+        "data": "{% $states.input.payload.data ? $states.input.payload.data : {} %}",
+        "engineParameters": "{% $states.input.payload.data.engineParameters ? $states.input.payload.data.engineParameters : {} %}",
+        "tags": "{% $states.input.payload.data.tags ? $states.input.payload.data.tags : {} %}",
+        "inputs": "{% $states.input.payload.data.inputs ? $states.input.payload.data.inputs : {} %}"
       }
     },
     "Validate draft data": {
@@ -21,7 +21,9 @@
       "Output": "{% $states.result.Payload %}",
       "Arguments": {
         "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
-        "Payload": "{% $draftData %}"
+        "Payload": {
+          "data": "{% $data %}"
+        }
       },
       "Retry": [
         {
@@ -56,46 +58,7 @@
       "Arguments": {
         "FunctionName": "${__get_workflow_run_object_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $draftDetail.portalRunId %}"
-        }
-      },
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "Lambda.ServiceException",
-            "Lambda.AWSLambdaException",
-            "Lambda.SdkClientException",
-            "Lambda.TooManyRequestsException"
-          ],
-          "IntervalSeconds": 1,
-          "MaxAttempts": 3,
-          "BackoffRate": 2,
-          "JitterStrategy": "FULL"
-        }
-      ],
-      "Next": "Do we have matching libraries",
-      "Assign": {
-        "draftWorkflowRunObject": "{% $states.result.Payload.workflowRunObject %}"
-      }
-    },
-    "Do we have matching libraries": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Next": "Get Engine parameters",
-          "Condition": "{% /* https://try.jsonata.org/XDJvywd0c */\n/* Compare the draft tags to the libraries */\n/* Get the draft tags */\n(\n    [ \n        $draftTags.(libraryId),\n        $draftTags.(tumorLibraryId)\n    ] ~> $sort\n)\n=\n/* Get the draft detail libraries */ \n(\n    [\n        $draftLibrariesList.(libraryId)\n    ] ~> $sort \n) %}",
-          "Comment": "All libraries in tags"
-        }
-      ],
-      "Default": "Get primitive tags from linked libraries"
-    },
-    "Get primitive tags from linked libraries": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "Arguments": {
-        "FunctionName": "${__get_libraries_lambda_function_arn__}",
-        "Payload": {
-          "libraries": "{% $draftLibrariesList %}"
+          "portalRunId": "{% $detail.portalRunId %}"
         }
       },
       "Retry": [
@@ -114,15 +77,12 @@
       ],
       "Next": "Get Engine parameters",
       "Assign": {
-        "draftTags": "{% $merge(\n  [\n    $states.result.Payload,\n    $draftTags\n  ]\n) %}"
+        "workflowRunObject": "{% $states.result.Payload.workflowRunObject %}"
       }
-    },
-    "Success": {
-      "Type": "Succeed"
     },
     "Get Engine parameters": {
       "Type": "Parallel",
-      "Next": "Get tags",
+      "Next": "Do we have matching libraries",
       "Branches": [
         {
           "StartAt": "Has Project ID",
@@ -132,7 +92,7 @@
               "Choices": [
                 {
                   "Next": "Use provided project id",
-                  "Condition": "{% $draftEngineParameters.projectId ? true : false %}",
+                  "Condition": "{% $engineParameters.projectId ? true : false %}",
                   "Comment": "Project ID Provided"
                 }
               ],
@@ -142,7 +102,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "projectId": "{% $draftEngineParameters.projectId %}"
+                "projectId": "{% $engineParameters.projectId %}"
               }
             },
             "Get Default Project Id": {
@@ -166,7 +126,7 @@
               "Choices": [
                 {
                   "Next": "Use provided pipeline id",
-                  "Condition": "{% ($draftEngineParameters.pipelineId ? $draftEngineParameters.pipelineId : $draftDetail.workflow.executionEnginePipelineId ) ? true : false %}",
+                  "Condition": "{% ($engineParameters.pipelineId ? $engineParameters.pipelineId : $detail.workflow.executionEnginePipelineId ) ? true : false %}",
                   "Comment": "Pipeline ID Provided"
                 }
               ],
@@ -176,13 +136,13 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "pipelineId": "{% $draftEngineParameters.pipelineId ? $draftEngineParameters.pipelineId : $draftDetail.workflow.executionEnginePipelineId %}"
+                "pipelineId": "{% $engineParameters.pipelineId ? $engineParameters.pipelineId : $detail.workflow.executionEnginePipelineId %}"
               }
             },
             "Get default pipeline id": {
               "Type": "Task",
               "Arguments": {
-                "Name": "{% '${__workflow_id_to_pipeline_id_ssm_parameter_path_prefix__}/' & $draftDetail.workflow.version %}"
+                "Name": "{% '${__workflow_id_to_pipeline_id_ssm_parameter_path_prefix__}/' & $detail.workflow.version %}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
@@ -200,7 +160,7 @@
               "Choices": [
                 {
                   "Next": "Use provided output uri",
-                  "Condition": "{% $draftEngineParameters.outputUri ? true : false %}",
+                  "Condition": "{% $engineParameters.outputUri ? true : false %}",
                   "Comment": "Output URI Provided"
                 }
               ],
@@ -210,7 +170,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "outputUri": "{% $draftEngineParameters.outputUri %}"
+                "outputUri": "{% $engineParameters.outputUri %}"
               }
             },
             "Get default output uri prefix": {
@@ -221,7 +181,7 @@
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
               "Output": {
-                "outputUri": "{% $states.result.Parameter.Value & $draftDetail.portalRunId & '/' %}"
+                "outputUri": "{% $states.result.Parameter.Value & $detail.portalRunId & '/' %}"
               }
             }
           }
@@ -234,7 +194,7 @@
               "Choices": [
                 {
                   "Next": "Use provided logs uri",
-                  "Condition": "{% $draftEngineParameters.logsUri ? true : false %}",
+                  "Condition": "{% $engineParameters.logsUri ? true : false %}",
                   "Comment": "Logs URI Provided"
                 }
               ],
@@ -244,7 +204,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "logsUri": "{% $draftEngineParameters.logsUri %}"
+                "logsUri": "{% $engineParameters.logsUri %}"
               }
             },
             "Get default logs uri prefix": {
@@ -255,7 +215,7 @@
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
               "Output": {
-                "logsUri": "{% $states.result.Parameter.Value & $draftDetail.portalRunId & '/' %}"
+                "logsUri": "{% $states.result.Parameter.Value & $detail.portalRunId & '/' %}"
               }
             }
           }
@@ -268,7 +228,7 @@
               "Choices": [
                 {
                   "Next": "Use provided cache uri",
-                  "Condition": "{% $draftEngineParameters.cacheUri ? true : false %}",
+                  "Condition": "{% $engineParameters.cacheUri ? true : false %}",
                   "Comment": "Cache URI Provided"
                 }
               ],
@@ -278,7 +238,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "cacheUri": "{% $draftEngineParameters.cacheUri %}"
+                "cacheUri": "{% $engineParameters.cacheUri %}"
               }
             },
             "Get default cache uri prefix": {
@@ -289,15 +249,57 @@
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
               "Output": {
-                "cacheUri": "{% $states.result.Parameter.Value & $draftDetail.portalRunId & '/' %}"
+                "cacheUri": "{% $states.result.Parameter.Value & $detail.portalRunId & '/' %}"
               }
             }
           }
         }
       ],
       "Assign": {
-        "engineParameters": "{% /* https://try.jsonata.org/6nUH8BUBr */\n [ $draftEngineParameters, $merge($states.result) ] ~> $merge  %}"
+        "engineParameters": "{% /* https://try.jsonata.org/6nUH8BUBr */\n [ $engineParameters, $merge($states.result) ] ~> $merge  %}"
       }
+    },
+    "Do we have matching libraries": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Get tags",
+          "Condition": "{% /* https://try.jsonata.org/XDJvywd0c */\n/* Compare the draft tags to the libraries */\n/* Get the draft tags */\n(\n    [ \n        $tags.(libraryId),\n        $tags.(tumorLibraryId)\n    ] ~> $sort\n)\n=\n/* Get the draft detail libraries */ \n(\n    [\n        $libraries.(libraryId)\n    ] ~> $sort \n) %}",
+          "Comment": "All libraries in tags"
+        }
+      ],
+      "Default": "Get primitive tags from linked libraries"
+    },
+    "Get primitive tags from linked libraries": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__get_libraries_lambda_function_arn__}",
+        "Payload": {
+          "libraries": "{% $libraries %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Get tags",
+      "Assign": {
+        "tags": "{% $merge(\n  [\n    $states.result.Payload,\n    $tags\n  ]\n) %}"
+      }
+    },
+    "Success": {
+      "Type": "Succeed"
     },
     "Get tags": {
       "Type": "Parallel",
@@ -310,7 +312,7 @@
               "Choices": [
                 {
                   "Next": "Set fastq rgid list",
-                  "Condition": "{% $draftTags.fastqRgidList ? true : false %}"
+                  "Condition": "{% $tags.fastqRgidList ? true : false %}"
                 }
               ],
               "Default": "Get fastq list rgids from normal libraries"
@@ -319,7 +321,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "fastqRgidList": "{% $draftTags.fastqRgidList %}"
+                "fastqRgidList": "{% $tags.fastqRgidList %}"
               }
             },
             "Get fastq list rgids from normal libraries": {
@@ -328,7 +330,7 @@
               "Arguments": {
                 "FunctionName": "${__get_fastq_rgids_from_library_id_lambda_function_arn__}",
                 "Payload": {
-                  "libraryId": "{% $draftTags.libraryId %}"
+                  "libraryId": "{% $tags.libraryId %}"
                 }
               },
               "Retry": [
@@ -360,7 +362,7 @@
               "Choices": [
                 {
                   "Next": "Tumor Fastq Rgid list set",
-                  "Condition": "{% $draftTags.tumorLibraryId ? true : false %}",
+                  "Condition": "{% $tags.tumorLibraryId ? true : false %}",
                   "Comment": "Has tumor library id"
                 }
               ],
@@ -371,7 +373,7 @@
               "Choices": [
                 {
                   "Next": "Set tumor fastq rgid list",
-                  "Condition": "{% $draftTags.tumorFastqRgidList ? true : false %}"
+                  "Condition": "{% $tags.tumorFastqRgidList ? true : false %}"
                 }
               ],
               "Default": "Get fastq list rgids from tumor libraries"
@@ -380,7 +382,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "tumorFastqRgidList": "{% $draftTags.tumorFastqRgidList %}"
+                "tumorFastqRgidList": "{% $tags.tumorFastqRgidList %}"
               }
             },
             "Get fastq list rgids from tumor libraries": {
@@ -389,7 +391,7 @@
               "Arguments": {
                 "FunctionName": "${__get_fastq_rgids_from_library_id_lambda_function_arn__}",
                 "Payload": {
-                  "libraryId": "{% $draftTags.tumorLibraryId %}"
+                  "libraryId": "{% $tags.tumorLibraryId %}"
                 }
               },
               "Retry": [
@@ -427,7 +429,7 @@
               "Arguments": {
                 "FunctionName": "${__get_metadata_tags_lambda_function_arn__}",
                 "Payload": {
-                  "libraryId": "{% $draftTags.libraryId %}"
+                  "libraryId": "{% $tags.libraryId %}"
                 }
               },
               "Retry": [
@@ -453,10 +455,21 @@
           }
         }
       ],
-      "Next": "Get libraries with readsets",
+      "Next": "Tags or Engine parameters have changed",
       "Assign": {
-        "tags": "{% /* https://try.jsonata.org/05K2l3beH */\n/* List to merge together */\n[\n    /* Start with the draft tags */\n    $draftTags,\n    /* Merge the results list together */\n    $merge($states.result)\n] \n/* Then merge these initial tags with states.result  */\n~> $merge\n/* Remove any keys with values */\n~> $sift(function($v, $k){$v != null}) %}"
+        "tags": "{% /* https://try.jsonata.org/05K2l3beH */\n/* List to merge together */\n[\n    /* Start with the draft tags */\n    $tags,\n    /* Merge the results list together */\n    $merge($states.result)\n] \n/* Then merge these initial tags with states.result  */\n~> $merge\n/* Remove any keys with values */\n~> $sift(function($v, $k){$v != null}) %}"
       }
+    },
+    "Tags or Engine parameters have changed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Make new WRU event",
+          "Condition": "{% ( ( $data.tags ? $data.tags : {} ) = $tags ~> $not ) or\\n( ( $data.engineParameters ? $data.engineParameters : {} ) = $engineParameters ~> $not ) %}",
+          "Comment": "Tags or Engine Parameters have changed"
+        }
+      ],
+      "Default": "Get libraries with readsets"
     },
     "Get libraries with readsets": {
       "Type": "Parallel",
@@ -507,7 +520,7 @@
               },
               "End": true,
               "Output": {
-                "library": "{% [\n  /* Draft libraries list */\n  $draftLibrariesList ~>\n  $single(function($libraryIter){\n    $libraryIter.libraryId = $tags.libraryId\n  }),\n  {\n    \"readsets\": $states.result\n  }\n] ~>\n$merge %}"
+                "library": "{% [\n  /* Draft libraries list */\n  $libraries ~>\n  $single(function($libraryIter){\n    $libraryIter.libraryId = $tags.libraryId\n  }),\n  {\n    \"readsets\": $states.result\n  }\n] ~>\n$merge %}"
               }
             }
           }
@@ -577,7 +590,7 @@
               },
               "End": true,
               "Output": {
-                "library": "{% [\n  /* Draft libraries list */\n  $draftLibrariesList ~>\n  $single(function($libraryIter){\n    $libraryIter.libraryId = $tags.tumorLibraryId \n  }),\n  {\n    \"readsets\": $states.result\n  }\n] ~>\n$merge %}"
+                "library": "{% [\n  /* Draft libraries list */\n  $libraries ~>\n  $single(function($libraryIter){\n    $libraryIter.libraryId = $tags.tumorLibraryId \n  }),\n  {\n    \"readsets\": $states.result\n  }\n] ~>\n$merge %}"
               }
             },
             "tumor libraries is empty (readsets)": {
@@ -603,7 +616,7 @@
               "Choices": [
                 {
                   "Next": "Keep Original germline data",
-                  "Condition": "{% ($draftInputs.normalDnaBamUri ? true : false) or ($draftInputs.tumorDnaBamUri ? true : false) %}"
+                  "Condition": "{% ($inputs.normalDnaBamUri ? true : false) or ($inputs.tumorDnaBamUri ? true : false) %}"
                 }
               ],
               "Default": "Get dragen wgts dna succeeded event"
@@ -619,7 +632,7 @@
                 "Payload": {
                   "workflowName": "${__dragen_wgts_dna_workflow_name__}",
                   "libraries": "{% $libraries %}",
-                  "analysisRunId": "{% $draftWorkflowRunObject.analysisRun ? $draftWorkflowRunObject.analysisRun.orcabusId : null %}",
+                  "analysisRunId": "{% $workflowRunObject.analysisRun ? $workflowRunObject.analysisRun.orcabusId : null %}",
                   "status": "${__succeeded_status__}"
                 }
               },
@@ -757,7 +770,7 @@
             "Get default input params": {
               "Type": "Task",
               "Arguments": {
-                "Name": "{% '${__default_inputs_ssm_parameter_prefix__}/' & $draftDetail.workflow.version %}"
+                "Name": "{% '${__default_inputs_ssm_parameter_prefix__}/' & $detail.workflow.version %}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
@@ -768,7 +781,7 @@
       ],
       "Next": "Add reference data",
       "Assign": {
-        "draftInputs": "{% /* https://try.jsonata.org/ZAkTIin-h */\n[\n  /* Start with the draft inputs */\n  $draftInputs,\n  /* Then get the default input params */\n  $states.result[1],\n  /* Combine the states results for the dragen outputs */\n  $states.result[0],\n  /* Add in the required sampleName and tumorSampleName */\n  /* These must match the value of the library id */\n  {\n    \"normalDnaSampleId\": $draftTags.libraryId,\n    \"tumorDnaSampleId\": $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId : null\n  },\n  /* We also add in the groupId and subjectId if theyre not already in */\n  {\n    \"groupId\": (\n        $draftInputs.groupId ? $draftInputs.groupId : (\n            ( $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId & \"__\": \"\" ) & $draftTags.libraryId\n        )\n    ),\n    \"subjectId\": (\n        $draftInputs.subjectId ? $draftInputs.subjectId : (\n            ( $draftTags.tumorLibraryId ? $draftTags.tumorLibraryId & \"__\": \"\" ) & $draftTags.libraryId\n        )\n    )\n  }\n]\n/* Combine list of objects */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
+        "inputs": "{% /* https://try.jsonata.org/ZAkTIin-h */\n[\n  /* Start with the draft inputs */\n  $inputs,\n  /* Then get the default input params */\n  $states.result[1],\n  /* Combine the states results for the dragen outputs */\n  $states.result[0],\n  /* Add in the required sampleName and tumorSampleName */\n  /* These must match the value of the library id */\n  {\n    \"normalDnaSampleId\": $tags.libraryId,\n    \"tumorDnaSampleId\": $tags.tumorLibraryId ? $tags.tumorLibraryId : null\n  },\n  /* We also add in the groupId and subjectId if theyre not already in */\n  {\n    \"groupId\": (\n        $inputs.groupId ? $inputs.groupId : (\n            ( $tags.tumorLibraryId ? $tags.tumorLibraryId & \"__\": \"\" ) & $tags.libraryId\n        )\n    ),\n    \"subjectId\": (\n        $inputs.subjectId ? $inputs.subjectId : (\n            ( $tags.tumorLibraryId ? $tags.tumorLibraryId & \"__\": \"\" ) & $tags.libraryId\n        )\n    )\n  }\n]\n/* Combine list of objects */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
       }
     },
     "Add reference data": {
@@ -783,7 +796,7 @@
               "Choices": [
                 {
                   "Next": "Use provided oncoanalyser wgts dna ref data path",
-                  "Condition": "{% $draftInputs.refDataHmfDataPath ? true : false %}"
+                  "Condition": "{% $inputs.refDataHmfDataPath ? true : false %}"
                 }
               ],
               "Default": "Use default oncoanalyser wgts dna ref data path"
@@ -792,13 +805,13 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "refDataHmfDataPath": "{% $draftInputs.refDataHmfDataPath %}"
+                "refDataHmfDataPath": "{% $inputs.refDataHmfDataPath %}"
               }
             },
             "Use default oncoanalyser wgts dna ref data path": {
               "Type": "Task",
               "Arguments": {
-                "Name": "{% '${__default_hmf_reference_data_path_ssm_parameter_prefix__}/' & $draftDetail.workflow.version %}"
+                "Name": "{% '${__default_hmf_reference_data_path_ssm_parameter_prefix__}/' & $detail.workflow.version %}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
@@ -816,7 +829,7 @@
               "Choices": [
                 {
                   "Next": "Get genome parameter",
-                  "Condition": "{% ( ( $draftInputs.genome ~> $match(/_hmf$/) ) ? true : false ) ~> $not %}"
+                  "Condition": "{% ( ( $inputs.genome ~> $match(/_hmf$/) ) ? true : false ) ~> $not %}"
                 }
               ],
               "Default": "Refdata placeholder"
@@ -824,12 +837,12 @@
             "Get genome parameter": {
               "Type": "Task",
               "Arguments": {
-                "Name": "{% '${__default_genome_ssm_parameter_prefix__}/' & $draftInputs.genome %}"
+                "Name": "{% '${__default_genome_ssm_parameter_prefix__}/' & $inputs.genome %}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
               "End": true,
               "Output": {
-                "genomes": "{% {\n  $draftInputs.genome: $parse($states.result.Parameter.Value)\n} %}"
+                "genomes": "{% {\n  $inputs.genome: $parse($states.result.Parameter.Value)\n} %}"
               }
             },
             "Refdata placeholder": {
@@ -841,7 +854,7 @@
         }
       ],
       "Assign": {
-        "draftInputs": "{% [\n  /* Start with the draft inputs + sequence data inputs */\n  $draftInputs,\n  /* Combine the states results */\n  $merge($states.result)\n] \n/* Merge Old and new */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
+        "inputs": "{% [\n  /* Start with the draft inputs + sequence data inputs */\n  $inputs,\n  /* Combine the states results */\n  $merge($states.result)\n] \n/* Merge Old and new */\n~> $merge\n/* Sift out inputs with null values */\n~> $sift(function($v, $k){ $v != null }) %}"
       }
     },
     "Get analysis storage size": {
@@ -849,8 +862,23 @@
       "Next": "Make new WRU event",
       "Branches": [
         {
-          "StartAt": "Get fastq id list by rgid list",
+          "StartAt": "Has analysis storage size",
           "States": {
+            "Has analysis storage size": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "Keep analysis storage as is",
+                  "Condition": "{% $engineParameters.analysisStorageSize ? true : false %}"
+                }
+              ],
+              "Default": "Get fastq id list by rgid list"
+            },
+            "Keep analysis storage as is": {
+              "Type": "Pass",
+              "End": true,
+              "Output": {}
+            },
             "Get fastq id list by rgid list": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
@@ -947,7 +975,7 @@
         }
       ],
       "Assign": {
-        "engineParameters": "{% [\n  $engineParameters,\n  {\n    \"analysisStorageSize\": $states.result[0].analysisStorageSize\n  }\n] ~> \n$merge %}"
+        "engineParameters": "{% [\n  $engineParameters,\n  $states.result[0]\n] ~> \n$merge %}"
       }
     },
     "Make new WRU event": {
@@ -957,12 +985,12 @@
       "Arguments": {
         "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $draftDetail.portalRunId %}",
+          "portalRunId": "{% $detail.portalRunId %}",
           "libraries": "{% $libraries %}",
           "payload": {
-            "version": "{% $draftPayload.version ? $draftPayload.version : '${__default_payload_version__}' %}",
+            "version": "{% $payload.version ? $payload.version : '${__default_payload_version__}' %}",
             "data": {
-              "inputs": "{% $draftInputs %}",
+              "inputs": "{% $inputs %}",
               "tags": "{% $tags %}",
               "engineParameters": "{% $engineParameters %}"
             }
@@ -995,7 +1023,7 @@
       "Arguments": {
         "FunctionName": "${__compare_payload_lambda_function_arn__}",
         "Payload": {
-          "oldPayload": "{% $draftPayload ~> \n| $ | {}, [\"orcabusId\", \"refId\"] | %}",
+          "oldPayload": "{% $payload ~> \n| $ | {}, [\"orcabusId\", \"refId\"] | %}",
           "newPayload": "{% $workflowRunUpdate.payload %}"
         }
       },

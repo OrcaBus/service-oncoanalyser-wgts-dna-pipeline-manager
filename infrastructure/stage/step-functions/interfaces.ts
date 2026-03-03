@@ -110,7 +110,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     // Validation lambda
     'validateDraftDataCompleteSchema',
   ],
-  validateDraftToReady: ['validateDraftDataCompleteSchema'],
+  validateDraftToReady: ['postSchemaValidation', 'validateDraftDataCompleteSchema'],
   readyEventToIcav2WesRequestEvent: ['convertReadyEventInputsToIcav2WesEventInputs'],
   icav2WesAscEventToWorkflowRscEvent: ['convertIcav2WesEventToWrscEvent'],
 };

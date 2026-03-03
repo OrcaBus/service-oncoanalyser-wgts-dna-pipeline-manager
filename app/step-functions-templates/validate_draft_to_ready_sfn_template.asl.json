@@ -8,7 +8,8 @@
       "Assign": {
         "detail": "{% $states.input %}",
         "payload": "{% $states.input.payload ? $states.input.payload : {} %}",
-        "payloadData": "{% $states.input.payload.data ? $states.input.payload.data : {} %}"
+        "payloadData": "{% $states.input.payload.data ? $states.input.payload.data : {} %}",
+        "workflowRunId": "{% $states.input.orcabusId %}"
       }
     },
     "Validate Draft Complete Event": {
@@ -19,7 +20,11 @@
       },
       "Arguments": {
         "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
-        "Payload": "{% $payloadData %}"
+        "Payload": {
+          "data": "{% $payloadData %}",
+          "workflowRunId": "{% $workflowRunId %}",
+          "addCommentOnError": true
+        }
       },
       "Retry": [
         {
@@ -41,9 +46,46 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Next": "Push WRU READY Event",
+          "Next": "Run Post Schema Validation",
           "Condition": "{% $states.input.isValid %}",
           "Comment": "Draft is Valid"
+        }
+      ],
+      "Default": "Pass"
+    },
+    "Run Post Schema Validation": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__post_schema_validation_lambda_function_arn__}",
+        "Payload": {
+          "data": "{% $payloadData %}",
+          "workflowRunId": "{% $workflowRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Workflow inputs are valid"
+    },
+    "Workflow inputs are valid": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Push WRU READY Event",
+          "Condition": "{% $states.input.isValid %}"
         }
       ],
       "Default": "Pass"

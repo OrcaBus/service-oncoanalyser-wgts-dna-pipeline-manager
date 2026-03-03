@@ -173,28 +173,3 @@ def handler(event, context):
         return {
             "bamUri": f"s3://{bam_file_obj['bucket']}/{bam_file_obj['key']}"
         }
-
-
-if __name__ == "__main__":
-    from os import environ
-    import json
-
-    environ['AWS_PROFILE'] = 'umccr-production'
-    environ['HOSTNAME_SSM_PARAMETER_NAME'] = '/hosted_zone/umccr/name'
-    environ['ORCABUS_TOKEN_SECRET_ID'] = 'orcabus/token-service-jwt'
-
-    print(json.dumps(
-        handler(
-            {
-                "tumorLibraryId": "L2300943",
-                "normalLibraryId": "L2300950"
-            },
-            None
-        ),
-        indent=4
-    ))
-
-# {
-#     "tumorBamUri": "s3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/production/analysis/dragen-wgts-dna/202509019aa880c3/L2300943__L2300950__hg38__linear__dragen_wgts_dna_somatic_variant_calling/L2300943_tumor.bam",
-#     "normalBamUri": "s3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/production/analysis/dragen-wgts-dna/202509019aa880c3/L2300943__L2300950__hg38__linear__dragen_wgts_dna_somatic_variant_calling/L2300950_normal.bam"
-# }
