@@ -17,6 +17,7 @@ export type LambdaName =
   | 'getLibraries'
   | 'getMetadataTags'
   // Validation lambda
+  | 'postSchemaValidation'
   | 'validateDraftDataCompleteSchema'
   // Ready to ICAv2 WES lambdas
   | 'convertReadyEventInputsToIcav2WesEventInputs'
@@ -40,6 +41,7 @@ export const lambdaNameList: LambdaName[] = [
   'getLibraries',
   'getMetadataTags',
   // Validate Draft Complete Schema
+  'postSchemaValidation',
   'validateDraftDataCompleteSchema',
   // Ready to ICAv2 WES lambdas
   'convertReadyEventInputsToIcav2WesEventInputs',
@@ -52,6 +54,8 @@ export interface LambdaRequirements {
   needsOrcabusApiTools?: boolean;
   needsSsmParametersAccess?: boolean;
   needsSchemaRegistryAccess?: boolean;
+  needsWorkflowEnvVars?: boolean;
+  needsBucketEnvVars?: boolean;
 }
 
 // Lambda requirements mapping
@@ -96,9 +100,15 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
     needsOrcabusApiTools: true,
   },
   // Validate Draft Complete schema
+  postSchemaValidation: {
+    needsOrcabusApiTools: true,
+    needsWorkflowEnvVars: true,
+    needsBucketEnvVars: true,
+  },
   validateDraftDataCompleteSchema: {
     needsSchemaRegistryAccess: true,
     needsSsmParametersAccess: true,
+    needsWorkflowEnvVars: true,
   },
   // Convert ready to ICAv2 WES Event - no requirements
   convertReadyEventInputsToIcav2WesEventInputs: {},
@@ -108,10 +118,16 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   },
 };
 
-export interface LambdaInput {
+export interface BuildAllLambdasProps {
+  refDataBucketName: string;
+  testDataBucketName: string;
+}
+
+export interface BuildLambdaProps extends BuildAllLambdasProps {
   lambdaName: LambdaName;
 }
 
-export interface LambdaObject extends LambdaInput {
+export interface LambdaObject {
+  lambdaName: LambdaName;
   lambdaFunction: PythonUvFunction;
 }

@@ -39,6 +39,8 @@ generate-WRU-draft.sh (library_id)...
                       [-c | --cache-uri-prefix <s3_uri>]
                       [-p | --project-id <project_id>]
                       [-s | --analysis-storage-size <analysis_storage_size>]
+                      [--workflow-version <workflow_version>]
+                      [--code-version <code_version>]
 
 Description:
 Run this script to generate a draft WorkflowRunUpdate event for the specified library IDs.
@@ -55,6 +57,8 @@ Keyword arguments:
   -p | --project-id:             (Optional) ICAv2 Project ID to associate with the workflow run
   -s | --analysis-storage-size:  (Optional) Set the analysis storage size, default SMALL, one of:
                                   - SMALL / MEDIUM / LARGE / XLARGE / 2XLARGE / 3XLARGE
+  --workflow-version:            (Optional) Override the default workflow version.
+  --code-version:                (Optional) Override the default code version.
 
 Environment:
   AWS_PROFILE:  (Optional) The AWS CLI profile to use for authentication.
@@ -238,6 +242,24 @@ while [[ $# -gt 0 ]]; do
     ANALYSIS_STORAGE_SIZE="${1#*=}"
     shift
     ;;
+  # Workflow version
+  --workflow-version)
+	WORKFLOW_VERSION="$2"
+	shift 2
+	;;
+  --workflow-version=*)
+	WORKFLOW_VERSION="${1#*=}"
+	shift
+	;;
+  # Code version
+  --code-version)
+	CODE_VERSION="$2"
+	shift 2
+	;;
+  --code-version=*)
+	CODE_VERSION="${1#*=}"
+	shift
+	;;
   # Positional arguments (library IDs)
   *)
     LIBRARY_ID_ARRAY+=("$1")

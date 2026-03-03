@@ -28,6 +28,10 @@ export interface StatelessApplicationStackConfig {
 
   // SSM Parameter paths
   ssmParameterPaths: SsmParameterPaths;
+
+  // Bucket Names
+  testDataBucketName: string;
+  refDataBucketName: string;
 }
 
 /* Set versions */

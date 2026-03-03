@@ -10,11 +10,16 @@ from typing import List
 
 # Local imports
 from orcabus_api_tools.workflow import (
-    get_workflow_run,
-    get_workflows_from_library_id_list
+    get_workflow_runs_from_metadata
 )
 from orcabus_api_tools.workflow.models import WorkflowRunDetail
-from orcabus_api_tools.workflow import get_workflows_from_analysis_run_id
+
+# Globals
+NON_SUCCEEDED_TERMINATED_STATUS_LIST = [
+    'FAILED',
+    'ABORTED',
+    'RESOLVED'
+]
 
 
 def handler(event, context):
@@ -37,44 +42,61 @@ def handler(event, context):
     # The analysis run id takes preference when making queries
     analysis_run_id = event.get('analysisRunId', None)
     libraries = event.get('libraries', None)
-
-    # Check not both analysis run id and libraries are None
-    if analysis_run_id is None and libraries is None:
-        raise ValueError("Either analysisRunId or libraries must be provided")
-
-    workflows_list: List[WorkflowRunDetail]
-    if analysis_run_id is not None:
-        workflows_list = get_workflows_from_analysis_run_id(
-            analysis_run_id=analysis_run_id
-        )
-    else:
-        # Get workflow intersection list
-        workflows_list = get_workflows_from_library_id_list(
-            library_id_list=list(map(
-                lambda library_iter_: library_iter_['libraryId'],
-                libraries
-            )
-        ))
+    rgid_list = event.get('rgidList', None)
 
     # Now we have our workflows, filter to the correct workflow name (and version if provided)
-    workflows_list = list(filter(
-        lambda workflow_iter_: get_workflow_run(workflow_iter_['orcabusId'])['workflow']['name'] == workflow_name,
-        workflows_list
-    ))
-
-    # Filter to workflow version if provided
-    if workflow_version is not None:
-        workflows_list = list(filter(
-            lambda workflow_iter_: get_workflow_run(workflow_iter_['orcabusId'])['workflow']['version'] == workflow_version,
-            workflows_list
-        ))
+    workflows_list: List[WorkflowRunDetail]
+    workflows_list = get_workflow_runs_from_metadata(
+        analysis_run_id=analysis_run_id,
+        workflow_name=workflow_name,
+        workflow_version=workflow_version,
+        library_id_list=list(map(
+            lambda library_iter_: library_iter_['libraryId'],
+            libraries
+        )),
+        rgid_list=rgid_list
+    )
 
     # Filter to workflow state if provided
     if workflow_status is not None:
+        # We need to make sure that we dont have any workflows that are still running
+        # That were started AFTER the last succeeded one
+        if (
+            workflow_status == 'SUCCEEDED' and
+            len(list(workflows_list)) > 1
+        ):
+            # We need to make sure that we dont have any workflows that are still running
+            # That was started AFTER the last succeeded one
+            # Get the most recent run (based on run state change) since some drafts can sit for a while
+            recent_run_status = sorted(
+                workflows_list,
+                key=lambda workflow_iter_: workflow_iter_['currentState']['orcabusId'],
+                reverse=True
+            )[0]['currentState']['status']
+            if (
+                    # Not the status we're after (SUCCEEDED) AND
+                    not recent_run_status == workflow_status and
+                    # Not in a non-succeeded terminated state (FAILED, ABORTED, RESOLVED), i.e still pending or running
+                    not recent_run_status in NON_SUCCEEDED_TERMINATED_STATUS_LIST
+            ):
+                # If this is the case, we have a workflow that is still running that was started after the last succeeded one,
+                # so we should not return any workflows as the latest one is still running and we want to wait for it to finish
+                # before returning any workflows
+                return {
+                    "workflowRunList": []
+                }
+
+        # Filter by status
         workflows_list = list(filter(
             lambda workflow_iter_: workflow_iter_['currentState']['status'] == workflow_status,
             workflows_list
         ))
+
+    # Filter by status
+    workflows_list = list(filter(
+        lambda workflow_iter_: workflow_iter_['currentState']['status'] == workflow_status,
+        workflows_list
+    ))
 
     if len(workflows_list) == 0:
         return {
@@ -89,92 +111,3 @@ def handler(event, context):
             reverse=True
         )[0]
     }
-
-
-# if __name__ == "__main__":
-#     import json
-#     from os import environ
-#     environ['AWS_PROFILE'] = 'umccr-development'
-#     environ['HOSTNAME_SSM_PARAMETER_NAME'] = '/hosted_zone/umccr/name'
-#     environ['ORCABUS_TOKEN_SECRET_ID'] = 'orcabus/token-service-jwt'
-#     print(json.dumps(
-#         handler(
-#             {
-#                 "workflowName": "dragen-wgts-dna",
-#                 "libraries": [
-#                     {
-#                         "libraryId": "L2300950",
-#                         "orcabusId": "lib.01J9T6AV2XJWBDJ42VAK6RB1XK",
-#                         "readsets": [
-#                             {
-#                                 "orcabusId": "fqr.01JN25MRV2622KBD073XGKVYQP",
-#                                 "rgid": "GGCATTCT+CAAGCTAG.2.230629_A01052_0154_BH7WF5DSX7"
-#                             }
-#                         ]
-#                     },
-#                     {
-#                         "libraryId": "L2300943",
-#                         "orcabusId": "lib.01J9T6ATSB40216793T4DJ7AWD",
-#                         "readsets": [
-#                             {
-#                                 "orcabusId": "fqr.01JN25MKYXVYJD30VZVJCP6407",
-#                                 "rgid": "ACTAAGAT+CCGCGGTT.4.230602_A00130_0258_BH55TMDSX7"
-#                             },
-#                             {
-#                                 "orcabusId": "fqr.01JN25MM0R858AXWJKT5E1W270",
-#                                 "rgid": "ACTAAGAT+CCGCGGTT.3.230602_A00130_0258_BH55TMDSX7"
-#                             }
-#                         ]
-#                     }
-#                 ],
-#                 "status": "SUCCEEDED"
-#             },
-#             None
-#         ),
-#         indent=4
-#     ))
-
-
-# if __name__ == "__main__":
-#     import json
-#     from os import environ
-#     environ['AWS_PROFILE'] = 'umccr-development'
-#     environ['HOSTNAME_SSM_PARAMETER_NAME'] = '/hosted_zone/umccr/name'
-#     environ['ORCABUS_TOKEN_SECRET_ID'] = 'orcabus/token-service-jwt'
-#     print(json.dumps(
-#         handler(
-#             {
-#                 "workflowName": "oncoanalyser-wgts-dna",
-#                 "libraries": [
-#                     {
-#                         "libraryId": "L2300950",
-#                         "orcabusId": "lib.01J9T6AV2XJWBDJ42VAK6RB1XK",
-#                         "readsets": [
-#                             {
-#                                 "orcabusId": "fqr.01JN25MRV2622KBD073XGKVYQP",
-#                                 "rgid": "GGCATTCT+CAAGCTAG.2.230629_A01052_0154_BH7WF5DSX7"
-#                             }
-#                         ]
-#                     },
-#                     {
-#                         "libraryId": "L2300943",
-#                         "orcabusId": "lib.01J9T6ATSB40216793T4DJ7AWD",
-#                         "readsets": [
-#                             {
-#                                 "orcabusId": "fqr.01JN25MKYXVYJD30VZVJCP6407",
-#                                 "rgid": "ACTAAGAT+CCGCGGTT.4.230602_A00130_0258_BH55TMDSX7"
-#                             },
-#                             {
-#                                 "orcabusId": "fqr.01JN25MM0R858AXWJKT5E1W270",
-#                                 "rgid": "ACTAAGAT+CCGCGGTT.3.230602_A00130_0258_BH55TMDSX7"
-#                             }
-#                         ]
-#                     }
-#                 ],
-#                 "analysisRunId": None,
-#                 "status": "SUCCEEDED"
-#             },
-#             None
-#         ),
-#         indent=4
-#     ))
