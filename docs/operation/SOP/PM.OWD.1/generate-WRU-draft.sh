@@ -59,7 +59,9 @@ echo_stderr(){
 
 print_usage(){
   local hostname
-  hostname="$(get_hostname_from_ssm)"
+  if ! hostname="$(get_hostname_from_ssm)"; then
+    echo_stderr "ERROR: Couldn't get hostname var from AWS, ensure you're logged into AWS"
+  fi
   if [[ -z "${hostname}" ]]; then
 	hostname="<aws_account_prefix>.umccr.org"
   fi
@@ -83,7 +85,7 @@ Run this script to generate a draft WorkflowRunUpdate event for the specified li
 
 Research Projects Note:
 If you intend to run this workflow outside of the main ICA projects (development, staging, production),
-ensure you have --output-uri-prefix, --logs-uri-prefix, and --project-id set appropriately.
+ensure you have --output-uri-prefix, --cache-uri-prefix, --logs-uri-prefix, and --project-id set appropriately.
 
 You will also need to ensure that the ICA pipeline ID attributed to the workflow-name/version/codeVersion is
 available in the ICA project id specified.
@@ -121,8 +123,6 @@ Binaries:
     - from https://github.com/fsaintjacques/semver-tool
   - curl should be installed for making API requests.
     - from https://curl.se/download.html
-  - base64 should be available for decoding the portal token.
-    - this should be installed by default on most systems, but if not it can be installed from https://www.gnu.org/software/coreutils/
   - openssl should be available for generating random portal run ids.
     - this should be installed by default on most systems, but if not it can be installed from https://www.openssl.org/source/
   - awk should be available for parsing command output.
@@ -136,6 +136,7 @@ bash generate-WRU-draft.sh tumor_library_id normal_library_id \\
   --comment 'Redriving analysis after failure' \\
   --output-uri-prefix s3://project-bucket/analysis/oncoanalyser-wgts-dna/ \\
   --logs-uri-prefix s3://project-bucket/logs/oncoanalyser-wgts-dna \\
+  --cache-uri-prefix s3://project-bucket/cache/oncoanalyser-wgts-dna \\
   --project-id project-uuid-1234-abcd
 
 "
@@ -164,7 +165,7 @@ check_binaries(){
   : '
   Check that required binaries are installed
   '
-  for binary in aws semver jq curl base64 openssl awk; do
+  for binary in aws semver jq curl openssl awk; do
     if ! command -v "${binary}" > /dev/null 2>&1; then
       echo_stderr "Error: ${binary} is not installed. Please install ${binary} and try again. Exiting."
       exit 1
@@ -205,9 +206,20 @@ get_email_from_portal_token(){
   once the event is pushed to EventBridge and the workflow run is created,
   to indicate who created the workflow run
   '
-  cut -d'.' -f2 <<< "${PORTAL_TOKEN}" | \
-  (base64 --decode 2>/dev/null || true) | \
-  jq --raw-output '.email'
+  jq --raw-output \
+    --null-input \
+	--arg portalToken "${PORTAL_TOKEN}" \
+	'
+	  (
+		# Get the middle chunk of the portal jwt token
+		$portalToken | split(".")[1] |
+		# Decode base64
+		@base64d |
+		# Load json
+		fromjson
+	  ) |
+	  .email
+	'
 }
 
 get_hostname_from_ssm(){
@@ -220,7 +232,7 @@ get_hostname_from_ssm(){
 
   aws ssm get-parameter \
     --name "/hosted_zone/umccr/name" \
-    --output json | \
+    --output json 2>/dev/null | \
   jq --raw-output \
     '.Parameter.Value'
 }
@@ -237,10 +249,18 @@ get_aws_account_prefix(){
 get_cognito_user_pool_id(){
   local cognito_user_pool_id
   cognito_user_pool_id="$( \
-    cut -d'.' -f2 <<< "${PORTAL_TOKEN}" |
-    (base64 --decode 2>/dev/null || true) | \
     jq --raw-output \
+      --null-input \
+      --arg portalToken "${PORTAL_TOKEN}" \
       '
+        (
+          # Get the middle chunk of the portal jwt token
+          $portalToken | split(".")[1] |
+          # Decode base64
+          @base64d |
+          # Load json
+          fromjson
+        ) |
         .iss |
         split("/")[-1]
       ' \
@@ -489,7 +509,7 @@ if [[ -n "${SAVE_DRAFT_PAYLOAD}" ]]; then
   # Check parent directory exists
   if [[ ! -d "$(dirname "${SAVE_DRAFT_PAYLOAD}")" ]]; then
     echo_stderr "Error: The parent directory for the file path provided for --save-draft-payload '${SAVE_DRAFT_PAYLOAD}' does not exist."
-    echo_stderr "       does not exist. Please provide a valid file path with an existing parent directory. Exiting."
+    echo_stderr "       Please provide a valid file path with an existing parent directory. Exiting."
     exit 1
   fi
   if [[ -e "${SAVE_DRAFT_PAYLOAD}" ]]; then
@@ -626,7 +646,7 @@ if [[ -n "${SAVE_DRAFT_PAYLOAD}" ]]; then
 fi
 
 # Set the trap
-trap 'rm -f lambda_data_pipe' EXIT
+trap 'rm -rf lambda_data_pipe' EXIT
 
 # Push the event to EventBridge
 mkfifo lambda_data_pipe
@@ -659,10 +679,10 @@ trap - EXIT
 if [[ -s "${errors_json}" ]]; then
   echo_stderr "Error pushing event to Lambda Function:"
   jq --raw-output '.' < "${errors_json}" 1>&2
-  rm "${errors_json}"
+  rm -rf "${errors_json}"
   exit 1
 else
-  rm "${errors_json}"
+  rm -rf "${errors_json}"
 fi
 
 # Now wait for the workflow run to be registered by the workflow manager,
