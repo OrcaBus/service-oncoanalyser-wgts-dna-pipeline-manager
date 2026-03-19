@@ -568,8 +568,19 @@ libraries="$(get_linked_libraries)"
 if [[ -z "${libraries}" || "$(jq 'length' <<< "${libraries}")" == 0 ]]; then
   echo_stderr "Error: No valid libraries found for the provided library IDs. Exiting."
   exit 1
+# Check length of libraries matches length of library id array, to catch cases where some library ids were invalid
+elif [[ "$(jq 'length' <<< "${libraries}")" -ne "${#LIBRARY_ID_ARRAY[@]}" ]]; then
+  echo_stderr "Error: One or more library IDs provided are invalid and did not return a library object."
+  echo_stderr "       Please check the provided library IDs. Exiting."
+  exit 1
+# Check that none of the library objects have null libraryId or orcabusId,
+# which would indicate an invalid library object was returned for a valid library id
 elif [[ "$(jq 'map(select(.libraryId == null or .orcabusId == null)) | length' <<< "${libraries}")" -gt 0 ]]; then
   echo_stderr "Error: One or more library objects are null. Please check the provided library IDs. Exiting."
+  exit 1
+# Check that there's at least two linked libraries as we only take tumor/normal inputs
+elif [[ "$(jq 'length' <<< "${libraries}")" -lt 2 ]]; then
+  echo_stderr "Error: Less than 2 linked libraries found for the provided library IDs. At least a tumor and normal library are required. Exiting."
   exit 1
 else
   echo_stderr "Found $(jq 'length' <<< "${libraries}") linked libraries"
