@@ -1,6 +1,6 @@
 Manual Pipeline Execution
 ================================================================================
-- Version: 2025.03.05
+- Version: 2026.03.05
 - Contact: Alexis Lucattini, [alexisl@unimelb.edu.au](mailto:alexisl@unimelb.edu.au)
 
 Table of Contents
@@ -19,10 +19,10 @@ Here we describe the SOP for manual execution of the pipeline.
 Requirements
 --------------------------------------------------------------------------------
 
-- appropriate AWS permissions
+- Appropriate AWS permissions, this should be an operator level permissions for one of umccr-dev/stg/prod
 - AWS credentials set up in the local environment
 - Access to the OrcaBus Portal (i.e. a PORTAL_TOKEN set in the environment)
-- tools installed
+- Tools installed
   - [aws](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) version 2 or higher
   - [jq](https://github.com/jqlang/jq) version 1.7 or higher
   - [curl](https://curl.se/download.html) version 7.76.0 or higher
@@ -36,7 +36,7 @@ To initiate a pipeline execution we need to generate an initial DRAFT event. For
 For convenience, we provide a shell script that generates and optionally submits an appropriate event.
 
 - Familiarise yourself with the script and its parameters: [generate-WRU-draft.sh --help](./generate-WRU-draft.sh)
-  - especially check the settings in the `Globals` section
+  - Especially check the settings in the `Globals` section
     - ensure the values are fit for your use case, e.g. for clinical samples match the accredited pipeline details
   - Set the engine parameters (if necessary) and library id(s) in the positional arguments.
 - Execute the script (e.g. `bash generate-WRU-draft.sh --comment 'Manual rerun' <your_tn_library_id> <your_normal_library_id>`)
