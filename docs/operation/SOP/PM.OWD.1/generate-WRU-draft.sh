@@ -529,6 +529,7 @@ declare -A MIN_REQUIREMENTS=(
   ["aws"]="2.0.0"    # Because what are you doing still on V1?
   ["curl"]="7.76.0"  # For --fail-with-body option
 )
+check_binaries
 
 # AWS Account ID by prefix
 declare -A PREFIX_BY_AWS_ACCOUNT_ID=(
