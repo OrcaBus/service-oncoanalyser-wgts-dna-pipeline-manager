@@ -1,8 +1,16 @@
-/* Directory constants */
+/* Imports */
+// Node
 import path from 'path';
-import { Genome, NotInBuiltInHmfReferenceGenomesType, WorkflowVersionType } from './interfaces';
+// Platform
 import { DATA_SCHEMA_REGISTRY_NAME } from '@orcabus/platform-cdk-constructs/shared-config/event-bridge';
+import {
+  REFERENCE_DATA_BUCKET,
+  TEST_DATA_BUCKET,
+} from '@orcabus/platform-cdk-constructs/shared-config/s3';
+// Local
+import { Genome, NotInBuiltInHmfReferenceGenomesType, WorkflowVersionType } from './interfaces';
 
+/* Directory constants */
 export const APP_ROOT = path.join(__dirname, '../../app');
 export const LAMBDA_DIR = path.join(APP_ROOT, 'lambdas');
 export const STEP_FUNCTIONS_DIR = path.join(APP_ROOT, 'step-functions-templates');
@@ -160,3 +168,7 @@ export const SSM_SCHEMA_ROOT = path.join(SSM_PARAMETER_PATH_PREFIX, 'schemas');
 
 // Used to group event rules and step functions
 export const STACK_PREFIX = 'orca-onco-wgts-dna';
+
+/* Buckets */
+export const TEST_DATA_BUCKET_NAME = TEST_DATA_BUCKET;
+export const REF_DATA_BUCKET_NAME = REFERENCE_DATA_BUCKET;

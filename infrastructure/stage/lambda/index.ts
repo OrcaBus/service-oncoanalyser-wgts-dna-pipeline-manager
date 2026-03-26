@@ -1,6 +1,12 @@
-import { LambdaInput, lambdaNameList, LambdaObject, lambdaRequirementsMap } from './interfaces';
+import {
+  BuildAllLambdasProps,
+  BuildLambdaProps,
+  lambdaNameList,
+  LambdaObject,
+  lambdaRequirementsMap,
+} from './interfaces';
 import { PythonUvFunction } from '@orcabus/platform-cdk-constructs/lambda';
-import { LAMBDA_DIR, SCHEMA_REGISTRY_NAME, SSM_SCHEMA_ROOT } from '../constants';
+import { LAMBDA_DIR, SCHEMA_REGISTRY_NAME, SSM_SCHEMA_ROOT, WORKFLOW_NAME } from '../constants';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cdk from 'aws-cdk-lib';
@@ -11,7 +17,7 @@ import { camelCaseToKebabCase, camelCaseToSnakeCase } from '../utils';
 import * as path from 'path';
 import { SchemaNames } from '../event-schemas/interfaces';
 
-function buildLambda(scope: Construct, props: LambdaInput): LambdaObject {
+function buildLambda(scope: Construct, props: BuildLambdaProps): LambdaObject {
   const lambdaNameToSnakeCase = camelCaseToSnakeCase(props.lambdaName);
   const lambdaRequirements = lambdaRequirementsMap[props.lambdaName];
 
@@ -94,6 +100,17 @@ function buildLambda(scope: Construct, props: LambdaInput): LambdaObject {
     );
   }
 
+  // Needs Workflow Env vars
+  if (lambdaRequirements.needsWorkflowEnvVars) {
+    lambdaFunction.addEnvironment('WORKFLOW_NAME', WORKFLOW_NAME);
+  }
+
+  // Needs bucket env vars
+  if (lambdaRequirements.needsBucketEnvVars) {
+    lambdaFunction.addEnvironment('REF_DATA_BUCKET_NAME', props.refDataBucketName);
+    lambdaFunction.addEnvironment('TEST_DATA_BUCKET_NAME', props.testDataBucketName);
+  }
+
   /*
     Special if the lambdaName is 'validateDraftCompleteSchema', we need to add in the ssm parameters
     to the REGISTRY_NAME and SCHEMA_NAME
@@ -114,12 +131,13 @@ function buildLambda(scope: Construct, props: LambdaInput): LambdaObject {
   };
 }
 
-export function buildAllLambdas(scope: Construct): LambdaObject[] {
+export function buildAllLambdas(scope: Construct, props: BuildAllLambdasProps): LambdaObject[] {
   // Iterate over lambdaLayerToMapping and create the lambda functions
   const lambdaObjects: LambdaObject[] = [];
   for (const lambdaName of lambdaNameList) {
     lambdaObjects.push(
       buildLambda(scope, {
+        ...props,
         lambdaName: lambdaName,
       })
     );

@@ -72,7 +72,7 @@
       ],
       "Next": "Did we get a oncoanalyser portal run id",
       "Assign": {
-        "draftPortalRunId": "{% $states.result.Payload.workflowRunObject.portalRunId ? $states.result.Payload.workflowRunObject.portalRunId : null %}"
+        "portalRunId": "{% $states.result.Payload.workflowRunObject.portalRunId ? $states.result.Payload.workflowRunObject.portalRunId : null %}"
       }
     },
     "Did we get a oncoanalyser portal run id": {
@@ -80,7 +80,7 @@
       "Choices": [
         {
           "Next": "Get oncoanalyser wgts dna draft payload",
-          "Condition": "{% $draftPortalRunId ? true : false %}"
+          "Condition": "{% $portalRunId ? true : false %}"
         }
       ],
       "Default": "No oncoanalyser portal run id found"
@@ -89,12 +89,12 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Assign": {
-        "draftPayload": "{% $states.result.Payload.payload %}"
+        "payload": "{% $states.result.Payload.payload %}"
       },
       "Arguments": {
         "FunctionName": "${__get_draft_payload_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $draftPortalRunId %}"
+          "portalRunId": "{% $portalRunId %}"
         }
       },
       "Retry": [
@@ -189,7 +189,7 @@
                       "Choices": [
                         {
                           "Next": "Get dragen tumor bam from portal run id",
-                          "Condition": "{% $draftPayload.data.tags.tumorLibraryId ? true : false %}"
+                          "Condition": "{% $payload.data.tags.tumorLibraryId ? true : false %}"
                         }
                       ],
                       "Default": "Germline only"
@@ -272,8 +272,8 @@
       "Arguments": {
         "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $draftPortalRunId %}",
-          "payload": "{% $draftPayload %}",
+          "portalRunId": "{% $portalRunId %}",
+          "payload": "{% $payload %}",
           "upstreamData": "{% $newWorkflowInputs %}"
         }
       },
@@ -302,7 +302,7 @@
       "Arguments": {
         "FunctionName": "${__compare_payload_lambda_function_arn__}",
         "Payload": {
-          "oldPayload": "{% $draftPayload %}",
+          "oldPayload": "{% $payload %}",
           "newPayload": "{% $newWorkflowRunUpdatePayload %}"
         }
       },
