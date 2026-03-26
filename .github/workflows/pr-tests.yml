@@ -1,6 +1,7 @@
 name: Pull Request Tests
 
 on:
+  merge_group:
   pull_request:
     paths-ignore:
       # The ignore only works only if changes to the main branch only include the following files.
@@ -15,6 +16,7 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+      - auto_merge_enabled
     branches:
       - main
 
