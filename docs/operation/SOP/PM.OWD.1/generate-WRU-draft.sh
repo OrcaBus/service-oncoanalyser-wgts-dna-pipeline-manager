@@ -30,25 +30,6 @@ SOP_ID="PM.OWD.1"
 GITHUB_REPO="OrcaBus/service-oncoanalyser-wgts-dna-pipeline-manager"
 THIS_SCRIPT_PATH="docs/operation/SOP/${SOP_ID}/generate-WRU-draft.sh"
 
-# SCRIPT BINARY VERSION MIN REQUIREMENTS
-declare -A MIN_REQUIREMENTS=(
-  ["jq"]="1.7.0"     # For if without else options
-  ["aws"]="2.0.0"    # Because what are you doing still on V1?
-  ["curl"]="7.76.0"  # For --fail-with-body option
-)
-
-# AWS Account ID by prefix
-declare -A PREFIX_BY_AWS_ACCOUNT_ID=(
-  ["843407916570"]="dev"
-  ["455634345446"]="stg"
-  ["472057503814"]="prod"
-)
-declare -A COGNITO_USER_POOL_ID_BY_PREFIX=(
-  ["ap-southeast-2_iWOHnsurL"]="dev"
-  ["ap-southeast-2_wWDrdTyzP"]="stg"
-  ["ap-southeast-2_HFrQ3aWm8"]="prod"
-)
-
 # Library id array
 LIBRARY_ID_ARRAY=()
 
@@ -63,7 +44,7 @@ print_usage(){
     echo_stderr "ERROR: Couldn't get hostname var from AWS, ensure you're logged into AWS"
   fi
   if [[ -z "${hostname}" ]]; then
-	hostname="<aws_account_prefix>.umccr.org"
+    hostname="<aws_account_prefix>.umccr.org"
   fi
 
   echo "
@@ -73,10 +54,10 @@ generate-WRU-draft.sh (library_id)...
                       [-f | --force]
                       [-o | --output-uri-prefix <s3_uri>]
                       [-l | --logs-uri-prefix <s3_uri>]
-                      [-c | --cache-uri-prefix <s3_uri>]
+                      [-t | --cache-uri-prefix <s3_uri>]
                       [-p | --project-id <project_id>]
                       [-s | --analysis-storage-size <analysis_storage_size>]
-					  [--save-draft-payload <output_file>]
+                      [--save-draft-payload <output_file>]
                       [--workflow-version <workflow_version>]
                       [--code-version <code_version>]
 
@@ -90,24 +71,28 @@ ensure you have --output-uri-prefix, --cache-uri-prefix, --logs-uri-prefix, and 
 You will also need to ensure that the ICA pipeline ID attributed to the workflow-name/version/codeVersion is
 available in the ICA project id specified.
 
-The output uri prefix, logs uri prefixes must be set to a location inside the s3 prefix that the ICA project is mounted on.
+The output uri prefix, cache uri and logs uri prefixes must be set to a location inside the s3 prefix that the ICA project is mounted on.
+
+Analysis storage size note:
+If not set, the populate-draft-data step function will first look through the fastq sizes for these libraries
+to gauge what analysis storage size should be used. Therefore it is recommend to set this parameter as blank
 
 Positional arguments:
   library_id:   One or more library IDs to link to the WorkflowRunUpdate event.
 
 Keyword arguments:
-  -h | --help:                   Print this help message and exit.
-  -c | --comment:                (Required) A comment to add to the payload, which will be visible in the workflow run details in OrcaUI.
-  -f | --force:                  (Optional) Don't confirm before pushing the event to EventBridge.
-  -o | --output-uri-prefix:      (Optional) S3 URI for outputs (must end with a slash).
-  -l | --logs-uri-prefix:        (Optional) S3 URI for logs (must end with a slash).
-  -t | --cache-uri-prefix:       (Optional) S3 URI for cache directory (must end with a slash).
-  -p | --project-id:             (Optional) ICAv2 Project ID to associate with the workflow run
-  -s | --analysis-storage-size:  (Optional) Set the analysis storage size, default SMALL, one of:
-                                  - SMALL / MEDIUM / LARGE / XLARGE / 2XLARGE / 3XLARGE
-  --save-draft-payload           (Optional) Save the generated draft event to a local file after pushing to event bridge for record purposes.
-  --workflow-version:            (Optional) Override the default workflow version.
-  --code-version:                (Optional) Override the default code version.
+  -h | --help                                   Print this help message and exit.
+  -c | --comment                                (Required) A comment to add to the payload, which will be visible in the workflow run details in OrcaUI.
+  -f | --force                                  (Optional) Don't confirm before pushing the event to EventBridge.
+  -o | --output-uri-prefix=<output_uri_prefix>  (Optional) S3 URI prefix, Outputs written to <output_uri_prefix><portal_run_id> (prefix value must end with a slash).
+  -l | --logs-uri-prefix=<logs_uri_prefix>      (Optional) S3 URI prefix, Logs written to <logs_uri_prefix><portal_run_id> (prefix value must end with a slash).
+  -t | --cache-uri-prefix=<cache_uri_prefix>    (Optional) S3 URI prefix, Cache data staged at <cache_uri_prefix><portal_run_id> (prefix value must end with a slash).
+  -p | --project-id=<project_id>                (Optional) ICAv2 Project ID to associate with the workflow run
+  -s | --analysis-storage-size=<size>           (Optional) Set the analysis storage size, one of:
+                                                  - SMALL / MEDIUM / LARGE / XLARGE / 2XLARGE / 3XLARGE
+  --save-draft-payload=<output_file>            (Optional) (Optional) Save the generated draft event to local file <output_file> after pushing to event bridge for record purposes.
+  --workflow-version=<workflow_version>         (Optional) Override the default workflow version.
+  --code-version=<code_version>                 (Optional) Override the default code version.
 
 Environment:
   PORTAL_TOKEN: (Required) Your personal portal token from https://portal.${hostname}/
@@ -147,17 +132,17 @@ compare_script_version_to_repo(){
   Compare the version of this script to the version in the repo, and print a warning if they are different
   '
   repo_script_version="$( \
-	curl --silent --fail --location --show-error \
-	  --url "https://raw.githubusercontent.com/${GITHUB_REPO}/refs/heads/main/${THIS_SCRIPT_PATH}" 2>/dev/null | \
-	(
-		grep -m1 "SOP_VERSION" | \
-		cut -d'"' -f2
-	) || echo "unknown"
+    curl --silent --fail --location --show-error \
+      --url "https://raw.githubusercontent.com/${GITHUB_REPO}/refs/heads/main/${THIS_SCRIPT_PATH}" | \
+    (
+      grep -m1 "SOP_VERSION" | \
+      cut -d'"' -f2
+    ) || echo "unknown"
   )"
 
   if [[ "${SOP_VERSION}" != "${repo_script_version}" ]]; then
-	echo_stderr "Warning: This script version (${SOP_VERSION}) is different from the version in the repo (${repo_script_version})."
-	echo_stderr "Warning: Consider refetching this script from https://github.com/${GITHUB_REPO}/blob/main/${THIS_SCRIPT_PATH}"
+    echo_stderr "Warning: This script version (${SOP_VERSION}) is different from the version in the repo (${repo_script_version})."
+    echo_stderr "Warning: Consider refetching this script from https://github.com/${GITHUB_REPO}/blob/main/${THIS_SCRIPT_PATH}"
   fi
 }
 
@@ -208,31 +193,31 @@ get_email_from_portal_token(){
   '
   jq --raw-output \
     --null-input \
-	--arg portalToken "${PORTAL_TOKEN}" \
-	'
-	  (
-		# Get the middle chunk of the portal jwt token
-		$portalToken | split(".")[1] |
-		# Decode base64
-		@base64d |
-		# Load json
-		fromjson
-	  ) |
-	  .email
-	'
+    --arg portalToken "${PORTAL_TOKEN}" \
+    '
+      (
+        # Get the middle chunk of the portal jwt token
+        $portalToken | split(".")[1] |
+        # Decode base64
+        @base64d |
+        # Load json
+        fromjson
+      ) |
+      .email
+    '
 }
 
 get_hostname_from_ssm(){
   # Cache the hostname in a global variable to
   # avoid multiple calls to SSM Parameter Store
   if [[ -n "${HOSTNAME}" ]]; then
-	echo "${HOSTNAME}"
-	return
+    echo "${HOSTNAME}"
+    return
   fi
 
   aws ssm get-parameter \
     --name "/hosted_zone/umccr/name" \
-    --output json 2>/dev/null | \
+    --output json | \
   jq --raw-output \
     '.Parameter.Value'
 }
@@ -246,7 +231,7 @@ get_aws_account_prefix(){
   echo "${PREFIX_BY_AWS_ACCOUNT_ID[${aws_account_id}]:-"unknown_aws_account_prefix"}"
 }
 
-get_cognito_user_pool_id(){
+get_cognito_user_pool_id_prefix(){
   local cognito_user_pool_id
   cognito_user_pool_id="$( \
     jq --raw-output \
@@ -396,15 +381,15 @@ while [[ $# -gt 0 ]]; do
       print_usage
       exit 0
       ;;
-	# Comment
+    # Comment
     -c|--comment)
       COMMENT="$2"
       shift 2
       ;;
     -c=*|--comment=*)
-	  COMMENT="${1#*=}"
-	  shift
-	  ;;
+      COMMENT="${1#*=}"
+      shift
+      ;;
     # Force boolean
     -f|--force)
       FORCE=true
@@ -457,13 +442,13 @@ while [[ $# -gt 0 ]]; do
     ;;
   # Save draft payload to file
   --save-draft-payload)
-	SAVE_DRAFT_PAYLOAD="$2"
-	shift 2
-	;;
+    SAVE_DRAFT_PAYLOAD="$2"
+    shift 2
+    ;;
   --save-draft-payload=*)
-	SAVE_DRAFT_PAYLOAD="${1#*=}"
-	shift
-	;;
+    SAVE_DRAFT_PAYLOAD="${1#*=}"
+    shift
+    ;;
   # Workflow version
   --workflow-version)
     WORKFLOW_VERSION="$2"
@@ -531,12 +516,38 @@ HOSTNAME="$(get_hostname_from_ssm)"
 # Check script version
 compare_script_version_to_repo
 
+# Check that we're running bash and it's version 4 or higher before declaring associative arrays
+if [[ ! -v BASH_VERSION || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+  echo_stderr "Error! This script is not being run with bash, or bash version is less than 4.0. Exiting"
+  print_usage
+  exit 1
+fi
+
+# SCRIPT BINARY VERSION MIN REQUIREMENTS
+declare -A MIN_REQUIREMENTS=(
+  ["jq"]="1.7.0"     # For if without else options
+  ["aws"]="2.0.0"    # Because what are you doing still on V1?
+  ["curl"]="7.76.0"  # For --fail-with-body option
+)
+
+# AWS Account ID by prefix
+declare -A PREFIX_BY_AWS_ACCOUNT_ID=(
+  ["843407916570"]="dev"
+  ["455634345446"]="stg"
+  ["472057503814"]="prod"
+)
+declare -A COGNITO_USER_POOL_ID_BY_PREFIX=(
+  ["ap-southeast-2_iWOHnsurL"]="dev"
+  ["ap-southeast-2_wWDrdTyzP"]="stg"
+  ["ap-southeast-2_HFrQ3aWm8"]="prod"
+)
+
 # Confirm that the aws account id associated with the credentials
 # Matches the cognito user pool id associated with the portal token,
 # to help catch users who have multiple AWS profiles configured and are using the wrong one
-if [[ "$(get_aws_account_prefix)" != "$(get_cognito_user_pool_id)" ]]; then
+if [[ "$(get_aws_account_prefix)" != "$(get_cognito_user_pool_id_prefix)" ]]; then
   echo_stderr "Warning: The AWS account prefix associated with your AWS credentials ($(get_aws_account_prefix)) "
-  echo_stderr "         does not match the expected prefix for the portal token you provided ($(get_cognito_user_pool_id))."
+  echo_stderr "         does not match the expected prefix for the portal token you provided ($(get_cognito_user_pool_id_prefix))."
   echo_stderr "         This may cause API calls to fail due to authentication issues."
   echo_stderr "         Please check that you are using the correct AWS profile and that your portal token is valid."
 fi
@@ -657,11 +668,13 @@ if [[ -n "${SAVE_DRAFT_PAYLOAD}" ]]; then
 fi
 
 # Set the trap
-trap 'rm -rf lambda_data_pipe' EXIT
+trap 'rm -rf "${LAMBDA_TMP_DIR:-}"' EXIT
 
 # Push the event to EventBridge
-mkfifo lambda_data_pipe
-errors_json="$(mktemp "errors.XXXXXX.json")"
+LAMBDA_TMP_DIR="$(mktemp -d "LAMBDA_TMP_DIR_XXXXXX")"
+LAMBDA_DATA_PIPE="${LAMBDA_TMP_DIR}/lambda_data_pipe"
+mkfifo "${LAMBDA_DATA_PIPE}"
+errors_json="$(mktemp -p "${LAMBDA_TMP_DIR}" "errors.XXXXXX.json")"
 echo_stderr "Pushing the draft event for portalRunId ${portal_run_id} via WRU Validation Lambda Function"
 aws lambda invoke \
   --function-name "$(get_lambda_function_name)" \
@@ -669,7 +682,7 @@ aws lambda invoke \
   --cli-binary-format raw-in-base64-out \
   --no-cli-pager \
   --invocation-type 'RequestResponse' \
-  lambda_data_pipe 1>/dev/null & \
+  "${LAMBDA_DATA_PIPE}" 1>/dev/null & \
 jq --raw-output \
   '
   if .statusCode != 200 then
@@ -678,23 +691,22 @@ jq --raw-output \
     empty
   end
   ' \
-  < lambda_data_pipe \
+  < "${LAMBDA_DATA_PIPE}" \
   > "${errors_json}" & \
 wait
-rm lambda_data_pipe
-
-# Remove trap
-trap - EXIT
 
 # Check for errors from the Lambda invocation
 if [[ -s "${errors_json}" ]]; then
   echo_stderr "Error pushing event to Lambda Function:"
   jq --raw-output '.' < "${errors_json}" 1>&2
-  rm -rf "${errors_json}"
+  rm -rf "${LAMBDA_TMP_DIR}"
   exit 1
 else
-  rm -rf "${errors_json}"
+  rm -rf "${LAMBDA_TMP_DIR}"
 fi
+
+# Remove trap
+trap - EXIT
 
 # Now wait for the workflow run to be registered by the workflow manager,
 # which should be done within a minute or two after pushing the event to EventBridge,
@@ -731,9 +743,13 @@ echo_stderr "Generating workflow comment"
 if ! comment_response="$(generate_workflow_comment "${workflow_run_orcabus_id}" "${email_address}")"; then
   echo_stderr "Warning: Failed to generate comment on workflow run."
   echo_stderr "         Please check that your PORTAL_TOKEN is valid and has permission to comment on the workflow run. "
-  echo_stderr "         And contact the script author if the issue persists. The workflow run has been created successfully, but the comment indicating who created the workflow run will be missing."
+  echo_stderr "         And contact the script author if the issue persists. The workflow run has been created successfully "
   echo_stderr "         but the comment indicating who created the workflow run and why will be missing."
-  echo_stderr "		    Error details: $(jq -rc <<< "${comment_response}")"
+  if parsed_error="$(jq -rc 2>/dev/null <<< "${comment_response}")"; then
+    echo_stderr "         Error details: ${parsed_error}"
+  else
+    echo_stderr "         Error details (unparsed): ${comment_response}"
+  fi
 fi
 
 echo_stderr "Workflow Run Creation Event complete!"
