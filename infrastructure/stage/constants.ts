@@ -39,7 +39,7 @@ export const WORKFLOW_VERSION_TO_DEFAULT_ICAV2_PIPELINE_ID_MAP: Record<
   '2.0.0': 'a64126df-d8b2-4ec0-99df-1154f44a74ef',
   '2.1.0': 'ab6e1d62-1b5a-4b24-86b8-81ccf4bdc7a2',
   '2.2.0': '40b8005e-1473-4257-9949-cc8b42750cf0',
-  '2.3.0': 'fb07badf-dcba-4a8c-97a9-12e842b97dfb', // Experimental atm
+  '2.3.0': 'fb07badf-dcba-4a8c-97a9-12e842b97dfb',
 };
 
 export const WORKFLOW_VERSION_TO_DEFAULT_HMF_REFERENCE_PATHS_MAP: Record<
