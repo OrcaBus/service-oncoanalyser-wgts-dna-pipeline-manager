@@ -20,12 +20,12 @@
     "organization": true
   },
   "license": "MIT",
-  "packageManager": "pnpm@10.22.0+sha512.bf049efe995b28f527fd2b41ae0474ce29186f7edcb3bf545087bd61fbbebb2bf75362d1307fda09c2d288e1e499787ac12d4fcb617a974718a6051f2eee741c",
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
-    "aws-cdk": "^2.1113.0",
+    "aws-cdk": "^2.1114.1",
     "cdk-nag": "^2.37.55",
     "eslint": "^10.1.0",
     "globals": "^17.4.0",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@orcabus/platform-cdk-constructs": "1.2.5",
-    "aws-cdk-lib": "^2.244.0",
+    "aws-cdk-lib": "^2.245.0",
     "constructs": "^10.6.0"
   }
 }
