@@ -464,9 +464,9 @@
       "Type": "Choice",
       "Choices": [
         {
+          "Comment": "Tags or Engine Parameters have changed",
           "Next": "Make new WRU event",
-          "Condition": "{% ( ( $data.tags ? $data.tags : {} ) = $tags ~> $not ) or\\n( ( $data.engineParameters ? $data.engineParameters : {} ) = $engineParameters ~> $not ) %}",
-          "Comment": "Tags or Engine Parameters have changed"
+          "Condition": "{% ( ( $data.tags ? $data.tags : {} ) = $tags ~> $not ) or\n( ( $data.engineParameters ? $data.engineParameters : {} ) = $engineParameters ~> $not ) %}"
         }
       ],
       "Default": "Get libraries with readsets"
