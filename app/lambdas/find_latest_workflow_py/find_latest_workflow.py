@@ -63,7 +63,7 @@ def handler(event, context):
         # That were started AFTER the last succeeded one
         if (
             workflow_status == 'SUCCEEDED' and
-            len(list(workflows_list)) > 1
+            len(workflows_list) > 1
         ):
             # We need to make sure that we dont have any workflows that are still running
             # That was started AFTER the last succeeded one
