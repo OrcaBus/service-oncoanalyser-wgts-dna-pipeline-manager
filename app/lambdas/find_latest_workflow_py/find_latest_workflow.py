@@ -63,7 +63,7 @@ def handler(event, context):
         # That were started AFTER the last succeeded one
         if (
             workflow_status == 'SUCCEEDED' and
-            len(list(workflows_list)) > 1
+            len(workflows_list) > 1
         ):
             # We need to make sure that we dont have any workflows that are still running
             # That was started AFTER the last succeeded one
@@ -83,7 +83,7 @@ def handler(event, context):
                 # so we should not return any workflows as the latest one is still running and we want to wait for it to finish
                 # before returning any workflows
                 return {
-                    "workflowRunList": []
+                    "workflowRunObject": None
                 }
 
         # Filter by status
