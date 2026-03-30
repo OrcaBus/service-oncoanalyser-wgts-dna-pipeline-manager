@@ -83,7 +83,7 @@ def handler(event, context):
                 # so we should not return any workflows as the latest one is still running and we want to wait for it to finish
                 # before returning any workflows
                 return {
-                    "workflowRunList": []
+                    "workflowRunObject": []
                 }
 
         # Filter by status
