@@ -95,7 +95,7 @@ export const getStatefulStackProps = (stage: StageName): StatefulApplicationStac
   };
 };
 
-export const getStatelessStackProps = (): StatelessApplicationStackConfig => {
+export const getStatelessStackProps = (stage: StageName): StatelessApplicationStackConfig => {
   // Get stateless application stack props
   return {
     // Event bus object
@@ -107,5 +107,8 @@ export const getStatelessStackProps = (): StatelessApplicationStackConfig => {
     // TestData and RefData bucket names
     testDataBucketName: TEST_DATA_BUCKET_NAME,
     refDataBucketName: REF_DATA_BUCKET_NAME,
+
+    // Stage Name
+    stageName: stage,
   };
 };
