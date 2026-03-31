@@ -31,6 +31,7 @@ function buildLambda(scope: Construct, props: BuildLambdaProps): LambdaObject {
     timeout: Duration.seconds(60),
     memorySize: 2048,
     includeOrcabusApiToolsLayer: lambdaRequirements.needsOrcabusApiTools,
+    includeIcav2Layer: lambdaRequirements.needsIcav2Tools,
   });
 
   // AwsSolutions-IAM4 - We need to add this for the lambda to work

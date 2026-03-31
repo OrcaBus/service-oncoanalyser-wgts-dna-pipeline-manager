@@ -52,6 +52,7 @@ export const lambdaNameList: LambdaName[] = [
 // Requirements interface for Lambda functions
 export interface LambdaRequirements {
   needsOrcabusApiTools?: boolean;
+  needsIcav2Tools?: boolean;
   needsSsmParametersAccess?: boolean;
   needsSchemaRegistryAccess?: boolean;
   needsWorkflowEnvVars?: boolean;
@@ -104,6 +105,7 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
     needsOrcabusApiTools: true,
     needsWorkflowEnvVars: true,
     needsBucketEnvVars: true,
+    needsIcav2Tools: true,
   },
   validateDraftDataCompleteSchema: {
     needsOrcabusApiTools: true,

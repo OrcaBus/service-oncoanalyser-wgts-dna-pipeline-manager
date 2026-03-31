@@ -6,10 +6,13 @@ import { buildAllLambdas } from './lambda';
 import { buildAllStepFunctions } from './step-functions';
 import { buildAllEventRules } from './event-rules';
 import { buildAllEventBridgeTargets } from './event-targets';
+import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
 
 export type StatelessApplicationStackProps = cdk.StackProps & StatelessApplicationStackConfig;
 
 export class StatelessApplicationStack extends cdk.Stack {
+  public readonly stageName: StageName;
+
   constructor(scope: Construct, id: string, props: StatelessApplicationStackProps) {
     super(scope, id, props);
 
@@ -17,6 +20,10 @@ export class StatelessApplicationStack extends cdk.Stack {
      * Oncoanalyser WGTS DNA Stack
      * Deploys the Oncoanalyser WGTS DNA orchestration services
      */
+
+    // Set the stage name
+    this.stageName = props.stageName;
+
     // Get the event bus as a construct
     const orcabusMainEventBus = events.EventBus.fromEventBusName(
       this,

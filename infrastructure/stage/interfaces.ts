@@ -5,6 +5,7 @@ Interfaces for the application
  */
 
 import { SsmParameterPaths, SsmParameterValues } from './ssm/interfaces';
+import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
 
 /**
  * Stateful application stack interface.
@@ -32,6 +33,9 @@ export interface StatelessApplicationStackConfig {
   // Bucket Names
   testDataBucketName: string;
   refDataBucketName: string;
+
+  // Stage Name
+  stageName: StageName;
 }
 
 /* Set versions */
