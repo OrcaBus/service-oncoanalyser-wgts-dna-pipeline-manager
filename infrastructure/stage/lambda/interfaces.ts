@@ -106,6 +106,7 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
     needsBucketEnvVars: true,
   },
   validateDraftDataCompleteSchema: {
+    needsOrcabusApiTools: true,
     needsSchemaRegistryAccess: true,
     needsSsmParametersAccess: true,
     needsWorkflowEnvVars: true,

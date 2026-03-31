@@ -4,7 +4,7 @@
 Download the draft schema, validate it against the current schema, and print the results.
 """
 
-# Imports
+# Standard imports
 import json
 import boto3
 import typing
@@ -14,6 +14,7 @@ from typing import Dict
 import logging
 from jsonschema import ValidationError
 
+# Layer imports
 from orcabus_api_tools.workflow import add_comment_to_workflow_run
 
 # Type checking imports
