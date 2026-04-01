@@ -114,18 +114,17 @@ function wireUpStateMachinePermissions(props: WireUpPermissionsProps): void {
   /* Allow the state machine to invoke the lambda function */
   for (const lambdaObject of lambdaFunctions) {
     lambdaObject.lambdaFunction.grantInvoke(props.sfnObject);
-    NagSuppressions.addResourceSuppressions(
-      props.sfnObject,
-      [
-        {
-          id: 'AwsSolutions-IAM5',
-          reason:
-            'We need to give access for the sfn to invoke all versions of the lambda function',
-        },
-      ],
-      true
-    );
   }
+  NagSuppressions.addResourceSuppressions(
+    props.sfnObject,
+    [
+      {
+        id: 'AwsSolutions-IAM5',
+        reason: 'We need to give access for the sfn to invoke all versions of the lambda function',
+      },
+    ],
+    true
+  );
 
   /* Event permissions */
   if (sfnRequirements.needsEventPutPermission) {
