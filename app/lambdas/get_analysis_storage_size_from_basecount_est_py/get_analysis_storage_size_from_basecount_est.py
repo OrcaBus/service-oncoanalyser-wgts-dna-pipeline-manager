@@ -5,11 +5,11 @@ Given a basecount estimate, determine the analysis storage size
 
 We bin as follows:
 
-Under 250 million bases: SMALL
+Under 500 million bases: SMALL
 
-Under 500 million bases: MEDIUM
+Under 1 billion bases: MEDIUM
 
-Over 500 million bases: LARGE
+Over 1 billion bases: LARGE
 """
 
 # Standard imports
