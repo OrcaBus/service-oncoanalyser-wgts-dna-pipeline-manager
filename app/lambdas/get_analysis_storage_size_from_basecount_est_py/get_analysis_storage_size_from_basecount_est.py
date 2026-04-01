@@ -5,11 +5,11 @@ Given a basecount estimate, determine the analysis storage size
 
 We bin as follows:
 
-Under 250 million bases: SMALL
+Under 500 million bases: SMALL
 
-Under 500 million bases: MEDIUM
+Under 1 billion bases: MEDIUM
 
-Over 500 million bases: LARGE
+Over 1 billion bases: LARGE
 """
 
 # Standard imports
@@ -32,9 +32,9 @@ def get_analysis_storage_size_from_basecount_est(basecount_est: int) -> 'Analysi
     :param basecount_est:
     :return:
     """
-    if basecount_est < 250_000_000:
+    if basecount_est < 500_000_000:
         return "SMALL"
-    elif basecount_est < 500_000_000:
+    elif basecount_est < 1_000_000_000:
         return "MEDIUM"
     else:
         return "LARGE"
