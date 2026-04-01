@@ -15,6 +15,7 @@ CACHE_URI_PREFIX=""
 PROJECT_ID=""
 COMMENT=""  # Use -c or --comment to set a comment to be added to the payload
 SAVE_DRAFT_PAYLOAD=""
+INPUT_DATA_FILE=""
 
 # Workflow constants
 WORKFLOW_NAME="oncoanalyser-wgts-dna"
@@ -60,6 +61,7 @@ generate-WRU-draft.sh (library_id)...
                       [--save-draft-payload <output_file>]
                       [--workflow-version <workflow_version>]
                       [--code-version <code_version>]
+                      [--input-data <input_data_path>]
 
 Description:
 Run this script to generate a draft WorkflowRunUpdate event for the specified library IDs.
@@ -77,6 +79,17 @@ Analysis storage size note:
 If not set, the populate-draft-data step function will first look through the fastq sizes for these libraries
 to gauge what analysis storage size should be used. Therefore it is recommend to set this parameter as blank
 
+Input data note:
+The populate draft data service will try to auto-populate inputs based on the information it already has.
+This may have unintended consequences if there exists two downstream analyses and you want inputs from one specific analysis.
+In this circumstance it is recommended to use the '--input-data section' to generate an existing data object to populate, for example
+{
+  \"inputs\": {
+    \"tumorDnaBamUri\": \"s3://path/to/specific/tumor.bam\"
+  }
+}
+
+
 Positional arguments:
   library_id:   One or more library IDs to link to the WorkflowRunUpdate event.
 
@@ -93,6 +106,9 @@ Keyword arguments:
   --save-draft-payload=<output_file>            (Optional) (Optional) Save the generated draft event to local file <output_file> after pushing to event bridge for record purposes.
   --workflow-version=<workflow_version>         (Optional) Override the default workflow version.
   --code-version=<code_version>                 (Optional) Override the default code version.
+  --input-data=<input_data_file>                (Optional) Add existing input data to the data section of the payload.
+                                                           This might be used to explicitly set input files
+                                                           See input data notes for more information.
 
 Environment:
   PORTAL_TOKEN: (Required) Your personal portal token from https://portal.${hostname}/
@@ -480,6 +496,15 @@ while [[ $# -gt 0 ]]; do
       CODE_VERSION="${1#*=}"
       shift
       ;;
+    # Code version
+    --input-data)
+      INPUT_DATA_FILE="$2"
+      shift 2
+      ;;
+    --input-data=*)
+      INPUT_DATA_FILE="${1#*=}"
+      shift
+      ;;
     # Positional arguments (library IDs)
     *)
       LIBRARY_ID_ARRAY+=("$1")
@@ -639,6 +664,27 @@ engine_parameters=$( \
     ' \
 )
 
+# Check for existing input data
+if [[ -n "${INPUT_DATA_FILE}" ]]; then
+  # Check if input data file exists
+  if [[ ! -f "${INPUT_DATA_FILE}" ]]; then
+    echo_stderr "${INPUT_DATA_FILE} does not exist"
+    print_usage
+    exit 1
+  fi
+
+  # Load in input data
+  if ! jq < "${INPUT_DATA_FILE}"; then
+    echo_stderr "${INPUT_DATA_FILE} is not in json format"
+    print_usage
+    exit 1
+  fi
+
+  input_data_json_str="$(jq < "${INPUT_DATA_FILE}")"
+else
+  input_data_json_str="null"
+fi
+
 # Generate the event
 lambda_payload="$( \
   jq --null-input --raw-output \
@@ -647,6 +693,7 @@ lambda_payload="$( \
     --arg portalRunId "${portal_run_id}" \
     --argjson libraries "${libraries}" \
     --argjson engineParameters "${engine_parameters}" \
+    --argjson inputData "${input_data_json_str}" \
     '
     {
       "status": "DRAFT",
@@ -663,6 +710,18 @@ lambda_payload="$( \
             "engineParameters": $engineParameters
           }
         }
+      end |
+      # If we have input data
+      if $inputData then
+        # Set payload version
+        .["payload"]["version"] = $payloadVersion |
+        # If payload data already exists we need to merge
+        if .["payload"]["data"] then
+          .["payload"]["data"] = ($inputData * .["payload"]["data"])
+        # Otherwise just use the input json data
+        else
+          .["payload"]["data"] = $inputData
+        end
       end
     ' \
 )"
