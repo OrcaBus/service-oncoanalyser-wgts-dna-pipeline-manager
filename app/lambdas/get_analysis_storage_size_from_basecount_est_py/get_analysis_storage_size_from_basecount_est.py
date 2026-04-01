@@ -32,9 +32,9 @@ def get_analysis_storage_size_from_basecount_est(basecount_est: int) -> 'Analysi
     :param basecount_est:
     :return:
     """
-    if basecount_est < 250_000_000:
+    if basecount_est < 500_000_000:
         return "SMALL"
-    elif basecount_est < 500_000_000:
+    elif basecount_est < 1_000_000_000:
         return "MEDIUM"
     else:
         return "LARGE"
