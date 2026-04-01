@@ -82,7 +82,7 @@ to gauge what analysis storage size should be used. Therefore it is recommend to
 Input data note:
 The populate draft data service will try to auto-populate inputs based on the information it already has.
 This may have unintended consequences if there exists two downstream analyses and you want inputs from one specific analysis.
-In this circumstance it is recommended to use the '--input-data section' to generate an existing data object to populate, for example
+In this circumstance it is recommended to use the '--input-data <json_file>' to generate an existing data object to populate, for example:
 {
   \"inputs\": {
     \"tumorDnaBamUri\": \"s3://path/to/specific/tumor.bam\"
@@ -108,7 +108,7 @@ Keyword arguments:
   --code-version=<code_version>                 (Optional) Override the default code version.
   --input-data=<input_data_file>                (Optional) Add existing input data to the data section of the payload.
                                                            This might be used to explicitly set input files
-                                                           See input data notes for more information.
+                                                           See input data note for more information.
 
 Environment:
   PORTAL_TOKEN: (Required) Your personal portal token from https://portal.${hostname}/
@@ -496,7 +496,7 @@ while [[ $# -gt 0 ]]; do
       CODE_VERSION="${1#*=}"
       shift
       ;;
-    # Code version
+    # Input data
     --input-data)
       INPUT_DATA_FILE="$2"
       shift 2
@@ -673,13 +673,14 @@ if [[ -n "${INPUT_DATA_FILE}" ]]; then
     exit 1
   fi
 
-  # Load in input data
-  if ! jq < "${INPUT_DATA_FILE}"; then
+  # Check input data is in json format
+  if ! jq -e 'type == "object"' < "${INPUT_DATA_FILE}" >/dev/null 2>&1; then
     echo_stderr "${INPUT_DATA_FILE} is not in json format"
     print_usage
     exit 1
   fi
 
+  # Load in input data
   input_data_json_str="$(jq < "${INPUT_DATA_FILE}")"
 else
   input_data_json_str="null"
