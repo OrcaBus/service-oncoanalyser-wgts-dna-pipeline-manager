@@ -237,18 +237,30 @@ get_email_from_portal_token(){
 }
 
 get_hostname_from_ssm(){
-  # Cache the hostname in a global variable to
-  # avoid multiple calls to SSM Parameter Store
+  : '
+    Cache the hostname in a global variable to
+    avoid multiple calls to SSM Parameter Store
+  '
+  local hostname
+  local hostname_ssm_parameter_path
+  hostname_ssm_parameter_path="/hosted_zone/umccr/name"
   if [[ -n "${HOSTNAME}" ]]; then
     echo "${HOSTNAME}"
     return
   fi
 
-  aws ssm get-parameter \
-    --name "/hosted_zone/umccr/name" \
-    --output json | \
-  jq --raw-output \
-    '.Parameter.Value'
+  if ! hostname="$( \
+    aws ssm get-parameter \
+      --name "${hostname_ssm_parameter_path}" \
+      --output json | \
+    jq --raw-output \
+      '.Parameter.Value' \
+  )"; then
+    echo_stderr "Error! Cannot get ssm parameter path ${hostname_ssm_parameter_path}"
+    echo_stderr "       Ensure you're in the correct AWS account and logged in"
+    return 1
+  fi
+  echo "${hostname}"
 }
 
 get_aws_account_prefix(){
@@ -549,7 +561,10 @@ if ! aws sts get-caller-identity --output json > /dev/null 2>&1; then
 fi
 
 # Set hostname
-HOSTNAME="$(get_hostname_from_ssm)"
+if ! HOSTNAME="$(get_hostname_from_ssm)"; then
+  print_usage
+  exit 1
+fi
 
 # Check script version
 compare_script_version_to_repo
@@ -745,10 +760,10 @@ if [[ -n "${SAVE_DRAFT_PAYLOAD}" ]]; then
 fi
 
 # Set the trap
+LAMBDA_TMP_DIR="$(mktemp -d "LAMBDA_TMP_DIR_XXXXXX")"
 trap 'rm -rf "${LAMBDA_TMP_DIR:-}"' EXIT
 
 # Push the event to EventBridge
-LAMBDA_TMP_DIR="$(mktemp -d "LAMBDA_TMP_DIR_XXXXXX")"
 LAMBDA_DATA_PIPE="${LAMBDA_TMP_DIR}/lambda_data_pipe"
 mkfifo "${LAMBDA_DATA_PIPE}"
 errors_json="$(mktemp -p "${LAMBDA_TMP_DIR}" "errors.XXXXXX.json")"
@@ -830,4 +845,4 @@ if ! comment_response="$(generate_workflow_comment "${workflow_run_orcabus_id}" 
 fi
 
 echo_stderr "Workflow Run Creation Event complete!"
-echo_stderr "Please head to 'https://orcaui.$(get_hostname_from_ssm)/runs/workflow/${workflow_run_orcabus_id}' to track the status of the workflow run"
+echo_stderr "Please head to 'https://orcaui.$(get_hostname_from_ssm)/workflows/workflowRuns/${workflow_run_orcabus_id}' to track the status of the workflow run"
