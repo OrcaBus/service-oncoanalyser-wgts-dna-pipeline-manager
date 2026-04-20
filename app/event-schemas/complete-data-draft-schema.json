@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2012-12/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
     "s3Uri": {
       "type": "string",
@@ -8,6 +8,51 @@
     "s3UriDirectory": {
       "type": "string",
       "pattern": "^s3://[a-zA-Z0-9_-]*/[a-zA-Z0-9_./-]*/$"
+    },
+    "cacheUri": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/s3UriDirectory"
+        },
+        {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": ".*/cache/.*"
+            }
+          ]
+        }
+      ]
+    },
+    "logsUri": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/s3UriDirectory"
+        },
+        {
+          "type": "string",
+          "pattern": ".*/logs/.*"
+        }
+      ]
+    },
+    "outputUri": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/s3UriDirectory"
+        },
+        {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": ".*/analysis/.*"
+            },
+            {
+              "type": "string",
+              "pattern": ".*/output/.*"
+            }
+          ]
+        }
+      ]
     },
     "genomes": {
       "type": "object",
@@ -195,13 +240,13 @@
           "type": "string"
         },
         "outputUri": {
-          "$ref": "#/$defs/s3UriDirectory"
+          "$ref": "#/$defs/outputUri"
         },
         "logsUri": {
-          "$ref": "#/$defs/s3UriDirectory"
+          "$ref": "#/$defs/logsUri"
         },
         "cacheUri": {
-          "$ref": "#/$defs/s3UriDirectory"
+          "$ref": "#/$defs/cacheUri"
         }
       },
       "required": ["projectId", "pipelineId", "outputUri", "logsUri", "cacheUri"],
