@@ -72,6 +72,12 @@ def validate_engine_parameters(
     if not cache_uri.startswith(project_prefix):
         return False, f"cacheUri '{cache_uri}' is not in the project context '{project_prefix}'"
 
+    # Ensure that the output uri, logs uri and cache uri aren't all the same
+    if not (
+            len(list({output_uri, logs_uri, cache_uri})) == len(list([output_uri, logs_uri, cache_uri]))
+    ):
+        return False, f"output uri, logs uri and cache uri must all be distinct"
+
     # Confirm the pipeline is in the project
     try:
         _ = get_project_pipeline_obj(
