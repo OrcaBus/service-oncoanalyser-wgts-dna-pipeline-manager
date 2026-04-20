@@ -41,12 +41,16 @@
           "$ref": "#/$defs/s3Uri"
         },
         {
-          "type": "string",
-          "pattern": ".*/analysis/.*"
-        },
-        {
-          "type": "string",
-          "pattern": ".*/output/.*"
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": ".*/analysis/.*"
+            },
+            {
+              "type": "string",
+              "pattern": ".*/output/.*"
+            }
+          ]
         }
       ]
     },

@@ -14,8 +14,8 @@ all start with the project prefix.
 Log any failures to the OrcaUI
 
 """
-
 # Imports
+from itertools import permutations
 from typing import Dict, Tuple
 import logging
 from os import environ
@@ -73,10 +73,9 @@ def validate_engine_parameters(
         return False, f"cacheUri '{cache_uri}' is not in the project context '{project_prefix}'"
 
     # Ensure that the output uri, logs uri and cache uri aren't all the same
-    if not (
-            len(list({output_uri, logs_uri, cache_uri})) == len(list([output_uri, logs_uri, cache_uri]))
-    ):
-        return False, f"output uri, logs uri and cache uri must all be distinct"
+    for (uri_1, uri_2) in permutations([output_uri, logs_uri, cache_uri], 2):
+        if uri_1 == uri_2:
+            return False, f"output uri, logs uri and cache uri must all be distinct"
 
     # Confirm the pipeline is in the project
     try:
