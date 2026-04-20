@@ -12,7 +12,7 @@
     "cacheUri": {
       "allOf": [
         {
-          "$ref": "#/$defs/s3Uri"
+          "$ref": "#/$defs/s3UriDirectory"
         },
         {
           "oneOf": [
@@ -27,7 +27,7 @@
     "logsUri": {
       "allOf": [
         {
-          "$ref": "#/$defs/s3Uri"
+          "$ref": "#/$defs/s3UriDirectory"
         },
         {
           "type": "string",
@@ -38,7 +38,7 @@
     "outputUri": {
       "allOf": [
         {
-          "$ref": "#/$defs/s3Uri"
+          "$ref": "#/$defs/s3UriDirectory"
         },
         {
           "oneOf": [
