@@ -37,6 +37,7 @@ To generate an output like the following
   "inputs": {
         "monochrome_logs": True,
         "mode": "wgts",
+        "publish_dir_mode": "symlink",
         "samplesheet": [
             # Normal Bam
             {
