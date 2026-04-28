@@ -37,6 +37,7 @@ To generate an output like the following
   "inputs": {
         "monochrome_logs": True,
         "mode": "wgts",
+        "publish_dir_mode": "symlink",
         "samplesheet": [
             # Normal Bam
             {
@@ -109,6 +110,7 @@ DEFAULT_MONOCHROME_LOGS = True
 DEFAULT_GENOME = "GRCh38_hmf"
 DEFAULT_GENOME_VERSION = "38"
 DEFAULT_GENOME_TYPE = "no_alt"
+DEFAULT_PUBLISH_DIR_MODE = "symlink"
 
 DEFAULT_SAMPLESHEET_COLUMNS = [
     "group_id",
@@ -195,6 +197,7 @@ def handler(event, context):
             {
                 "mode": ready_event_inputs.get("mode", DEFAULT_MODE),
                 "monochrome_logs": ready_event_inputs.get("monochromeLogs", DEFAULT_MONOCHROME_LOGS),
+                "publish_dir_mode": ready_event_inputs.get("publishDirMode", DEFAULT_PUBLISH_DIR_MODE),
                 "samplesheet": generate_samplesheet_from_inputs(ready_event_inputs),
                 "genome": ready_event_inputs.get("genome", DEFAULT_GENOME),
                 "genome_version": ready_event_inputs.get("genomeVersion", DEFAULT_GENOME_VERSION),
