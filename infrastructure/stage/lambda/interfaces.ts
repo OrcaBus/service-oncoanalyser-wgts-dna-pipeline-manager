@@ -16,11 +16,16 @@ export type LambdaName =
   | 'getFastqRgidsFromLibraryId'
   | 'getLibraries'
   | 'getMetadataTags'
+  | 'getPrefixFromProjectId'
+  | 'getFastqListRowsFromFastqRgidList'
   // Validation lambda
   | 'postSchemaValidation'
   | 'validateDraftDataCompleteSchema'
   // Ready to ICAv2 WES lambdas
   | 'convertReadyEventInputsToIcav2WesEventInputs'
+  | 'determineFastqCompressionType'
+  | 'generateFastqUriByFastqIdMap'
+  | 'collectOraOutputs'
   // ICAv2 WES to WRSC Event lambdas
   | 'convertIcav2WesEventToWrscEvent';
 
@@ -40,11 +45,16 @@ export const lambdaNameList: LambdaName[] = [
   'getFastqRgidsFromLibraryId',
   'getLibraries',
   'getMetadataTags',
+  'getPrefixFromProjectId',
+  'getFastqListRowsFromFastqRgidList',
   // Validate Draft Complete Schema
   'postSchemaValidation',
   'validateDraftDataCompleteSchema',
   // Ready to ICAv2 WES lambdas
   'convertReadyEventInputsToIcav2WesEventInputs',
+  'determineFastqCompressionType',
+  'generateFastqUriByFastqIdMap',
+  'collectOraOutputs',
   // ICAv2 WES to WRSC Event lambdas
   'convertIcav2WesEventToWrscEvent',
 ];
@@ -57,6 +67,7 @@ export interface LambdaRequirements {
   needsSchemaRegistryAccess?: boolean;
   needsWorkflowEnvVars?: boolean;
   needsBucketEnvVars?: boolean;
+  needsHigherMemory?: boolean;
 }
 
 // Lambda requirements mapping
@@ -100,12 +111,22 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   getMetadataTags: {
     needsOrcabusApiTools: true,
   },
+  getPrefixFromProjectId: {
+    needsOrcabusApiTools: true,
+    needsIcav2Tools: true,
+    needsHigherMemory: true,
+  },
+  getFastqListRowsFromFastqRgidList: {
+    needsOrcabusApiTools: true,
+    needsBucketEnvVars: true,
+  },
   // Validate Draft Complete schema
   postSchemaValidation: {
     needsOrcabusApiTools: true,
     needsWorkflowEnvVars: true,
     needsBucketEnvVars: true,
     needsIcav2Tools: true,
+    needsHigherMemory: true,
   },
   validateDraftDataCompleteSchema: {
     needsOrcabusApiTools: true,
@@ -114,10 +135,20 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
     needsWorkflowEnvVars: true,
   },
   // Convert ready to ICAv2 WES Event - no requirements
-  convertReadyEventInputsToIcav2WesEventInputs: {},
+  convertReadyEventInputsToIcav2WesEventInputs: {
+    needsHigherMemory: true,
+  },
+  determineFastqCompressionType: {},
+  generateFastqUriByFastqIdMap: {
+    needsOrcabusApiTools: true,
+  },
+  collectOraOutputs: {
+    needsOrcabusApiTools: true,
+  },
   // Needs OrcaBus toolkit to get the wrsc event
   convertIcav2WesEventToWrscEvent: {
     needsOrcabusApiTools: true,
+    needsWorkflowEnvVars: true,
   },
 };
 
