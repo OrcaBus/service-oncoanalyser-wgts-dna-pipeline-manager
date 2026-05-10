@@ -7,7 +7,7 @@
       "Next": "Validate Draft Complete Event",
       "Assign": {
         "detail": "{% $states.input %}",
-        "payload": "{% $states.input.payload ? $states.input.payload : {} %}",
+        "payload": "{% (\n  $states.input.payload ? \n  $states.input.payload : {\n    \"version\": \"${__default_payload_version__}\"\n  }\n) %}",
         "payloadData": "{% $states.input.payload.data ? $states.input.payload.data : {} %}",
         "workflowRunId": "{% $states.input.orcabusId %}"
       }
@@ -21,6 +21,7 @@
       "Arguments": {
         "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
         "Payload": {
+          "payloadVersion": "{% $payload.version %}",
           "data": "{% $payloadData %}",
           "workflowRunId": "{% $workflowRunId %}",
           "addCommentOnError": true

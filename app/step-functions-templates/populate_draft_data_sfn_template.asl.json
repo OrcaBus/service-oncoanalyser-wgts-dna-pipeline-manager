@@ -22,6 +22,7 @@
       "Arguments": {
         "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
         "Payload": {
+          "payloadVersion": "{% $payload.version %}",
           "data": "{% $data %}"
         }
       },
