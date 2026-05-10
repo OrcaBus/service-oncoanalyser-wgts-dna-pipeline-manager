@@ -609,8 +609,266 @@
       "Type": "Parallel",
       "Branches": [
         {
-          "StartAt": "Has dragen data",
+          "StartAt": "From Fastq (inputs)",
           "States": {
+            "From Fastq (inputs)": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "Get fastq inputs",
+                  "Condition": "{% $tags.fromFastq ? true : false %}"
+                }
+              ],
+              "Default": "Has dragen data"
+            },
+            "Get fastq inputs": {
+              "Type": "Parallel",
+              "Branches": [
+                {
+                  "StartAt": "Get fastq id list from rgid list (fqlr)",
+                  "States": {
+                    "Get fastq id list from rgid list (fqlr)": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Output": {
+                        "fastqIdList": "{% $states.result.Payload.fastqIdList %}"
+                      },
+                      "Arguments": {
+                        "FunctionName": "${__get_fastq_id_list_from_rgid_list_lambda_function_arn__}",
+                        "Payload": {
+                          "fastqRgidList": "{% $tags.fastqRgidList %}"
+                        }
+                      },
+                      "Retry": [
+                        {
+                          "ErrorEquals": [
+                            "Lambda.ServiceException",
+                            "Lambda.AWSLambdaException",
+                            "Lambda.SdkClientException",
+                            "Lambda.TooManyRequestsException"
+                          ],
+                          "IntervalSeconds": 1,
+                          "MaxAttempts": 3,
+                          "BackoffRate": 2,
+                          "JitterStrategy": "FULL"
+                        }
+                      ],
+                      "Next": "Wait for fastq"
+                    },
+                    "Wait for fastq": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::events:putEvents.waitForTaskToken",
+                      "Arguments": {
+                        "Entries": [
+                          {
+                            "Detail": {
+                              "taskToken": "{% $states.context.Task.Token %}",
+                              "payload": {
+                                "fastqIdList": "{% $states.input.fastqIdList %}",
+                                "requirements": {
+                                  "hasQc": true,
+                                  "hasFingerprint": true,
+                                  "hasActiveReadSet": true
+                                },
+                                "forceUnarchiving": true
+                              }
+                            },
+                            "DetailType": "${__fastq_sync_detail_type__}",
+                            "EventBusName": "OrcaBusMain",
+                            "Source": "orcabus.oncowgtsdna"
+                          }
+                        ]
+                      },
+                      "Next": "Get prefix from project id"
+                    },
+                    "Get prefix from project id": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Arguments": {
+                        "FunctionName": "${__get_prefix_from_project_id_lambda_function_arn__}",
+                        "Payload": {
+                          "projectId": "{% $engineParameters.projectId %}"
+                        }
+                      },
+                      "Retry": [
+                        {
+                          "ErrorEquals": [
+                            "Lambda.ServiceException",
+                            "Lambda.AWSLambdaException",
+                            "Lambda.SdkClientException",
+                            "Lambda.TooManyRequestsException"
+                          ],
+                          "IntervalSeconds": 1,
+                          "MaxAttempts": 3,
+                          "BackoffRate": 2,
+                          "JitterStrategy": "FULL"
+                        }
+                      ],
+                      "Next": "Get fastq list rows from rgid list",
+                      "Output": {
+                        "s3Uri": "{% $states.result.Payload.s3Uri %}"
+                      }
+                    },
+                    "Get fastq list rows from rgid list": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Arguments": {
+                        "FunctionName": "${__get_fastq_list_rows_from_fastq_rgid_list_lambda_function_arn__}",
+                        "Payload": {
+                          "fastqRgidList": "{% $tags.fastqRgidList %}",
+                          "s3UriPrefix": "{% $states.input.s3Uri %}"
+                        }
+                      },
+                      "Retry": [
+                        {
+                          "ErrorEquals": [
+                            "Lambda.ServiceException",
+                            "Lambda.AWSLambdaException",
+                            "Lambda.SdkClientException",
+                            "Lambda.TooManyRequestsException"
+                          ],
+                          "IntervalSeconds": 1,
+                          "MaxAttempts": 3,
+                          "BackoffRate": 2,
+                          "JitterStrategy": "FULL"
+                        }
+                      ],
+                      "End": true,
+                      "Output": {
+                        "normalFastqListRows": "{% $states.result.Payload.fastqListRows %}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "StartAt": "Has tumor fastq rgid list",
+                  "States": {
+                    "Has tumor fastq rgid list": {
+                      "Type": "Choice",
+                      "Choices": [
+                        {
+                          "Next": "Get fastq id list from rgid list (fqlr-tumor)",
+                          "Condition": "{% $tags.tumorFastqRgidList ? true : false %}"
+                        }
+                      ],
+                      "Default": "Pass (1)"
+                    },
+                    "Get fastq id list from rgid list (fqlr-tumor)": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Output": "{% $states.result.Payload %}",
+                      "Arguments": {
+                        "FunctionName": "${__get_fastq_id_list_from_rgid_list_lambda_function_arn__}",
+                        "Payload": {
+                          "fastqRgidList": "{% $tags.tumorFastqRgidList %}"
+                        }
+                      },
+                      "Retry": [
+                        {
+                          "ErrorEquals": [
+                            "Lambda.ServiceException",
+                            "Lambda.AWSLambdaException",
+                            "Lambda.SdkClientException",
+                            "Lambda.TooManyRequestsException"
+                          ],
+                          "IntervalSeconds": 1,
+                          "MaxAttempts": 3,
+                          "BackoffRate": 2,
+                          "JitterStrategy": "FULL"
+                        }
+                      ],
+                      "Next": "Wait for tumor fastq"
+                    },
+                    "Wait for tumor fastq": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::events:putEvents.waitForTaskToken",
+                      "Arguments": {
+                        "Entries": [
+                          {
+                            "Detail": {
+                              "taskToken": "{% $states.context.Task.Token %}",
+                              "payload": {
+                                "fastqIdList": "{% $states.input.fastqIdList %}",
+                                "requirements": {
+                                  "hasQc": true,
+                                  "hasFingerprint": true,
+                                  "hasActiveReadSet": true
+                                },
+                                "forceUnarchiving": true
+                              }
+                            },
+                            "DetailType": "${__fastq_sync_detail_type__}",
+                            "EventBusName": "OrcaBusMain",
+                            "Source": "orcabus.oncowgtsdna"
+                          }
+                        ]
+                      },
+                      "Next": "Get prefix from project id (tumor)"
+                    },
+                    "Get prefix from project id (tumor)": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Output": "{% $states.result.Payload %}",
+                      "Arguments": {
+                        "FunctionName": "${__get_prefix_from_project_id_lambda_function_arn__}",
+                        "Payload": {
+                          "projectId": "{% $engineParameters.projectId %}"
+                        }
+                      },
+                      "Retry": [
+                        {
+                          "ErrorEquals": [
+                            "Lambda.ServiceException",
+                            "Lambda.AWSLambdaException",
+                            "Lambda.SdkClientException",
+                            "Lambda.TooManyRequestsException"
+                          ],
+                          "IntervalSeconds": 1,
+                          "MaxAttempts": 3,
+                          "BackoffRate": 2,
+                          "JitterStrategy": "FULL"
+                        }
+                      ],
+                      "Next": "Get fastq list rows from rgid list (tumor)"
+                    },
+                    "Get fastq list rows from rgid list (tumor)": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Arguments": {
+                        "FunctionName": "${__get_fastq_list_rows_from_fastq_rgid_list_lambda_function_arn__}",
+                        "Payload": {
+                          "fastqRgidList": "{% $tags.tumorFastqRgidList %}",
+                          "s3UriPrefix": "{% $states.input.s3Uri %}"
+                        }
+                      },
+                      "Retry": [
+                        {
+                          "ErrorEquals": [
+                            "Lambda.ServiceException",
+                            "Lambda.AWSLambdaException",
+                            "Lambda.SdkClientException",
+                            "Lambda.TooManyRequestsException"
+                          ],
+                          "IntervalSeconds": 1,
+                          "MaxAttempts": 3,
+                          "BackoffRate": 2,
+                          "JitterStrategy": "FULL"
+                        }
+                      ],
+                      "End": true,
+                      "Output": {
+                        "tumorFastqListRows": "{% $states.result.Payload.fastqListRows %}"
+                      }
+                    },
+                    "Pass (1)": {
+                      "Type": "Pass",
+                      "End": true
+                    }
+                  }
+                }
+              ],
+              "End": true
+            },
             "Has dragen data": {
               "Type": "Choice",
               "Choices": [
