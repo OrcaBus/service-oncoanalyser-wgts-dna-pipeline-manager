@@ -38,7 +38,10 @@ export interface StatelessApplicationStackConfig {
   stageName: StageName;
 }
 
-/* Set versions */
+/* Set payload versions */
+export type PayloadVersionType = '2025.08.05' | '2026.04.16';
+
+/* Set workflow versions */
 export type WorkflowVersionType = '2.0.0' | '2.1.0' | '2.2.0' | '2.3.0';
 
 /* Set genomes */
@@ -55,3 +58,5 @@ export interface Genome {
   gridssIndex: string;
   starIndex: string;
 }
+
+export const payloadVersionList: PayloadVersionType[] = ['2025.08.05', '2026.04.16'];
