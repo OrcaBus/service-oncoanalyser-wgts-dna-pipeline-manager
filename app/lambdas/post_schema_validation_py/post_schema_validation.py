@@ -16,7 +16,7 @@ Log any failures to the OrcaUI
 """
 # Imports
 from itertools import permutations
-from typing import Dict, Tuple
+from typing import Dict, Tuple, cast
 import logging
 from os import environ
 
@@ -45,8 +45,8 @@ logger.setLevel(logging.INFO)
 
 def validate_engine_parameters(
         engine_parameters: Dict,
-        workflow_run_id: str = None,
-        project_prefix: str = None
+        workflow_run_id: str,
+        project_prefix: str
 ) -> Tuple[bool, str]:
     """
     Validate the engine parameters.
@@ -56,13 +56,13 @@ def validate_engine_parameters(
     :return: A tuple of (is_valid, comment)
     """
     # Get the project id
-    project_id = engine_parameters.get("projectId")
+    project_id: str = engine_parameters.get("projectId", "")
 
     # Confirm that the outputUri and logsUri are a subset of the project prefix
-    output_uri = engine_parameters.get("outputUri", "")
-    logs_uri = engine_parameters.get("logsUri", "")
-    cache_uri = engine_parameters.get("cacheUri", "")
-    pipeline_id = engine_parameters.get("pipelineId", "")
+    output_uri: str = engine_parameters.get("outputUri", "")
+    logs_uri: str = engine_parameters.get("logsUri", "")
+    cache_uri: str = engine_parameters.get("cacheUri", "")
+    pipeline_id: str = engine_parameters.get("pipelineId", "")
 
     # Validate the uris are correct
     if not output_uri.startswith(project_prefix):
@@ -194,7 +194,7 @@ def handler(event, context) -> Dict[str, bool]:
     engine_parameters = payload_data.get("engineParameters")
 
     # Get the project prefix
-    project_prefix = get_s3_key_prefix_by_project_id(engine_parameters.get("projectId"))
+    project_prefix: str = cast(str, get_s3_key_prefix_by_project_id(engine_parameters.get("projectId")))
 
     # Confirm the engine parameters match
     is_valid, comment = validate_engine_parameters(
@@ -213,7 +213,7 @@ def handler(event, context) -> Dict[str, bool]:
             inputs,
             project_id=engine_parameters.get("projectId"),
             # Get the key prefix for the project
-            project_prefix=get_s3_key_prefix_by_project_id(engine_parameters.get("projectId"))
+            project_prefix=project_prefix
         )
 
     # Somewhere along the way, the validation failed
