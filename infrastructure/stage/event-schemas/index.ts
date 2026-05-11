@@ -1,7 +1,6 @@
 import * as schemas from 'aws-cdk-lib/aws-eventschemas';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import {
-  DEFAULT_PAYLOAD_VERSION,
   EVENT_SCHEMAS_DIR,
   SCHEMA_REGISTRY_NAME,
   SSM_SCHEMA_ROOT,
