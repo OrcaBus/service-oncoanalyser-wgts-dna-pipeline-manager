@@ -250,7 +250,7 @@
         }
       },
       "required": ["projectId", "pipelineId", "outputUri", "logsUri", "cacheUri"],
-      "allowAdditionalProperties": true
+      "additionalProperties": true
     }
   },
   "type": "object",
