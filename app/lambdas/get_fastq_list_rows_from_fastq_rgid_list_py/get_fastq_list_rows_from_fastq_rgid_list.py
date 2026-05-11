@@ -39,12 +39,6 @@ def handler(event, context):
         fastq_rgid_list
     )))
 
-    # Test-data will have its own prefix
-    fastq_list_rows = list(map(
-        to_fastq_list_row,
-        all_fastq_ids
-    ))
-
     # Keep the test-data fastq list rows
     # (which are exempt from the requirement of being in a particular project prefix)
     non_test_data_fastq_list_ids = []

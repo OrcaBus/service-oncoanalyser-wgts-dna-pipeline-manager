@@ -675,8 +675,8 @@
                               }
                             },
                             "DetailType": "${__fastq_sync_detail_type__}",
-                            "EventBusName": "OrcaBusMain",
-                            "Source": "orcabus.oncowgtsdna"
+                            "EventBusName": "${__event_bus_name__}",
+                            "Source": "${__stack_source__}"
                           }
                         ]
                       },
@@ -799,8 +799,8 @@
                               }
                             },
                             "DetailType": "${__fastq_sync_detail_type__}",
-                            "EventBusName": "OrcaBusMain",
-                            "Source": "orcabus.oncowgtsdna"
+                            "EventBusName": "${__event_bus_name__}",
+                            "Source": "${__stack_source__}"
                           }
                         ]
                       },

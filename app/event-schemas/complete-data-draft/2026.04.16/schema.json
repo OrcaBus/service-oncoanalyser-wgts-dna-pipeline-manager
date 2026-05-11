@@ -281,8 +281,6 @@
         "mode",
         "groupId",
         "subjectId",
-        "tumorDnaBamUri",
-        "normalDnaBamUri",
         "tumorDnaSampleId",
         "normalDnaSampleId",
         "genome",
@@ -313,7 +311,7 @@
         }
       },
       "required": ["projectId", "pipelineId", "outputUri", "logsUri", "cacheUri"],
-      "allowAdditionalProperties": true
+      "additionalProperties": true
     }
   },
   "type": "object",

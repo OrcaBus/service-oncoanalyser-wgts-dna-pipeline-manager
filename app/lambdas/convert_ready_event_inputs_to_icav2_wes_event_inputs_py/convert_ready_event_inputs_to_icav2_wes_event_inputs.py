@@ -131,7 +131,7 @@ FASTQ_SAMPLESHEET_COLUMNS = [
 
 
 def generate_samplesheet_from_inputs(ready_event_inputs: Dict[str, Union[str, Dict[str, str]]]) -> List[Dict[str, str]]:
-    if ready_event_inputs['normalDnaBamUri'] is not None:
+    if ready_event_inputs.get('normalDnaBamUri') is not None:
         return generate_samplesheet_from_input_bams(ready_event_inputs)
     else:
         return generate_samplesheet_from_input_fastqs(ready_event_inputs)
