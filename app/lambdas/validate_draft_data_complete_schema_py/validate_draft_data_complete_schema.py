@@ -28,6 +28,7 @@ SSM_REGISTRY_NAME_ENV_VAR = "SSM_REGISTRY_NAME"
 SSM_SCHEMA_PATH_ENV_VAR = "SSM_SCHEMA_PATH"
 WORKFLOW_NAME_ENV_VAR = "WORKFLOW_NAME"
 COMMENT_AUTHOR = "{WORKFLOW_NAME}-workflow-validation-service"
+DEFAULT_PAYLOAD_VERSION_ENV_VAR = "DEFAULT_PAYLOAD_VERSION"
 
 # Set up logging
 logger = logging.getLogger()
@@ -114,7 +115,7 @@ def handler(event, context) -> Dict[str, bool]:
     :return:
     """
     # Get the event data
-    payload_version = event.get("payloadVersion")
+    payload_version = event.get("payloadVersion", environ[DEFAULT_PAYLOAD_VERSION_ENV_VAR])
     payload_data = event.get('data')
     workflow_run_id = event.get("workflowRunId", "")
     comment_error = event.get("addCommentOnError", False)
