@@ -74,8 +74,9 @@ And get the output
   }
 ]
 """
-from copy import copy
+
 # Standard imports
+from copy import copy
 from typing import Dict, List, Union
 
 # Layer imports
