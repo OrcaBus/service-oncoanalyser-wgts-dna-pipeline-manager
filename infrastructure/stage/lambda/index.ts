@@ -6,7 +6,13 @@ import {
   lambdaRequirementsMap,
 } from './interfaces';
 import { PythonUvFunction } from '@orcabus/platform-cdk-constructs/lambda';
-import { LAMBDA_DIR, SCHEMA_REGISTRY_NAME, SSM_SCHEMA_ROOT, WORKFLOW_NAME } from '../constants';
+import {
+  DEFAULT_PAYLOAD_VERSION,
+  LAMBDA_DIR,
+  SCHEMA_REGISTRY_NAME,
+  SSM_SCHEMA_ROOT,
+  WORKFLOW_NAME,
+} from '../constants';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cdk from 'aws-cdk-lib';
@@ -29,7 +35,7 @@ function buildLambda(scope: Construct, props: BuildLambdaProps): LambdaObject {
     index: lambdaNameToSnakeCase + '.py',
     handler: 'handler',
     timeout: Duration.seconds(60),
-    memorySize: 2048,
+    memorySize: lambdaRequirements.needsHigherMemory ? 2048 : undefined,
     includeOrcabusApiToolsLayer: lambdaRequirements.needsOrcabusApiTools,
     includeIcav2Layer: lambdaRequirements.needsIcav2Tools,
   });
@@ -120,9 +126,16 @@ function buildLambda(scope: Construct, props: BuildLambdaProps): LambdaObject {
     const draftSchemaName: SchemaNames = 'completeDataDraft';
     lambdaFunction.addEnvironment('SSM_REGISTRY_NAME', path.join(SSM_SCHEMA_ROOT, 'registry'));
     lambdaFunction.addEnvironment(
-      'SSM_SCHEMA_NAME',
-      path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(draftSchemaName), 'latest')
+      'SSM_SCHEMA_PATH',
+      path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(draftSchemaName))
     );
+  }
+
+  /*
+  Add DEFAULT_PAYLOAD_VERSION env var too
+   */
+  if (props.lambdaName === 'validateDraftDataCompleteSchema') {
+    lambdaFunction.addEnvironment('DEFAULT_PAYLOAD_VERSION', DEFAULT_PAYLOAD_VERSION);
   }
 
   /* Return the function */

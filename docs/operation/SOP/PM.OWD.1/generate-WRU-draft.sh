@@ -16,17 +16,18 @@ PROJECT_ID=""
 COMMENT=""  # Use -c or --comment to set a comment to be added to the payload
 SAVE_DRAFT_PAYLOAD=""
 INPUT_DATA_FILE=""
+FROM_FASTQ_TAG="false"
 
 # Workflow constants
 WORKFLOW_NAME="oncoanalyser-wgts-dna"
 WORKFLOW_VERSION="2.2.0"
 EXECUTION_ENGINE="ICA"
 CODE_VERSION="b94cbc7"
-PAYLOAD_VERSION="2025.08.05"
+PAYLOAD_VERSION="2026.04.16"
 ANALYSIS_STORAGE_SIZE=""
 
 # SOP constants
-SOP_VERSION="2026.03.05"
+SOP_VERSION="2026.05.08"
 SOP_ID="PM.OWD.1"
 GITHUB_REPO="OrcaBus/service-oncoanalyser-wgts-dna-pipeline-manager"
 THIS_SCRIPT_PATH="docs/operation/SOP/${SOP_ID}/generate-WRU-draft.sh"
@@ -62,6 +63,7 @@ generate-WRU-draft.sh (library_id)...
                       [--workflow-version <workflow_version>]
                       [--code-version <code_version>]
                       [--input-data <input_data_path>]
+                      [--from-fastq]
 
 Description:
 Run this script to generate a draft WorkflowRunUpdate event for the specified library IDs.
@@ -109,6 +111,7 @@ Keyword arguments:
   --input-data=<input_data_file>                (Optional) Add existing input data to the data section of the payload.
                                                            This might be used to explicitly set input files
                                                            See input data note for more information.
+  --from-fastq                                  (Optional) Adds the tag 'fromFastq' if set.
 
 Environment:
   PORTAL_TOKEN: (Required) Your personal portal token from https://portal.${hostname}/
@@ -505,6 +508,11 @@ while [[ $# -gt 0 ]]; do
       INPUT_DATA_FILE="${1#*=}"
       shift
       ;;
+    # From fastq
+    --from-fastq)
+      FROM_FASTQ_TAG="true"
+      shift
+      ;;
     # Positional arguments (library IDs)
     *)
       LIBRARY_ID_ARRAY+=("$1")
@@ -695,14 +703,15 @@ lambda_payload="$( \
     --argjson libraries "${libraries}" \
     --argjson engineParameters "${engine_parameters}" \
     --argjson inputData "${input_data_json_str}" \
+    --argjson fromFastq "${FROM_FASTQ_TAG}" \
     '
-    {
-      "status": "DRAFT",
-      "timestamp": (now | todateiso8601),
-      "workflow": $workflow,
-      "workflowRunName": ("umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
-      "portalRunId": $portalRunId,
-      "libraries": $libraries,
+      {
+        "status": "DRAFT",
+        "timestamp": (now | todateiso8601),
+        "workflow": $workflow,
+        "workflowRunName": ("umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
+        "portalRunId": $portalRunId,
+        "libraries": $libraries,
       } |
       if ( ($engineParameters | length) > 0 ) then
         .["payload"] = {
@@ -714,6 +723,10 @@ lambda_payload="$( \
       end |
       # If we have input data
       if $inputData then
+        # Initialise payload if not set
+        if (.["payload"] | not) then
+          .["payload"] = {}
+        end |
         # Set payload version
         .["payload"]["version"] = $payloadVersion |
         # If payload data already exists we need to merge
@@ -722,6 +735,25 @@ lambda_payload="$( \
         # Otherwise just use the input json data
         else
           .["payload"]["data"] = $inputData
+        end
+      end |
+      # If we have the fromFastq parameter set
+      if $fromFastq then
+        # Initialise payload if not set
+        if (.["payload"] | not) then
+          .["payload"] = {}
+        end |
+        # Set the payload version
+        .["payload"]["version"] = $payloadVersion |
+        # Initialise "data" if not set
+        if (.["payload"]["data"] | not) then
+          .["payload"]["data"] = {}
+        end |
+        # Update the tag fromFastq
+        if .["payload"]["data"]["tags"] then
+          .["payload"]["data"]["tags"]["fromFastq"] = true
+        else
+          .["payload"]["data"]["tags"] = {"fromFastq": true}
         end
       end
     ' \
@@ -830,4 +862,4 @@ if ! comment_response="$(generate_workflow_comment "${workflow_run_orcabus_id}" 
 fi
 
 echo_stderr "Workflow Run Creation Event complete!"
-echo_stderr "Please head to 'https://orcaui.$(get_hostname_from_ssm)/runs/workflow/${workflow_run_orcabus_id}' to track the status of the workflow run"
+echo_stderr "Please head to 'https://orcaui.$(get_hostname_from_ssm)/workflows/workflowRuns/${workflow_run_orcabus_id}' to track the status of the workflow run"

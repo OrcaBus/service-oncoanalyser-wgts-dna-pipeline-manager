@@ -4,9 +4,371 @@
   "States": {
     "Save inputs": {
       "Type": "Pass",
-      "Next": "Convert Oncoanalyser WGTS DNA Ready Event to ICAv2 WES Event",
+      "Next": "Secondary vars",
       "Assign": {
         "oncoanalyserWgtsDnaReadyEventDetail": "{% $states.input %}"
+      }
+    },
+    "Secondary vars": {
+      "Type": "Pass",
+      "Next": "From Fastq",
+      "Assign": {
+        "inputs": "{% $oncoanalyserWgtsDnaReadyEventDetail.payload.data.inputs %}",
+        "tags": "{% $oncoanalyserWgtsDnaReadyEventDetail.payload.data.tags %}",
+        "engineParameters": "{% $oncoanalyserWgtsDnaReadyEventDetail.payload.data.engineParameters %}"
+      }
+    },
+    "From Fastq": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Decompress ORA",
+          "Condition": "{% $tags.fromFastq ? true : false %}",
+          "Comment": "Is from fastq"
+        }
+      ],
+      "Default": "Convert Oncoanalyser WGTS DNA Ready Event to ICAv2 WES Event"
+    },
+    "Decompress ORA": {
+      "Type": "Parallel",
+      "Next": "Convert Oncoanalyser WGTS DNA Ready Event to ICAv2 WES Event",
+      "Branches": [
+        {
+          "StartAt": "Determine fastq compression type",
+          "States": {
+            "Determine fastq compression type": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Arguments": {
+                "FunctionName": "${__determine_fastq_compression_type_lambda_function_arn__}",
+                "Payload": {
+                  "fastqListRows": "{% $inputs.normalFastqListRows %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Output": {
+                "compressionType": "{% $states.result.Payload.compressionType %}"
+              },
+              "Next": "Is Ora inputs"
+            },
+            "Is Ora inputs": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "Get fastq ids from fastq rgid list",
+                  "Condition": "{% $states.input.compressionType = 'ORA' %}"
+                }
+              ],
+              "Default": "No changes required"
+            },
+            "Get fastq ids from fastq rgid list": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": {
+                "fastqIdList": "{% $states.result.Payload.fastqIdList %}"
+              },
+              "Arguments": {
+                "FunctionName": "${__get_fastq_id_list_from_rgid_list_lambda_function_arn__}",
+                "Payload": {
+                  "fastqRgidList": "{% $tags.fastqRgidList %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Generate fastq uri by fastq id map"
+            },
+            "No changes required": {
+              "Type": "Pass",
+              "End": true
+            },
+            "Generate fastq uri by fastq id map": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": {
+                "fastqIdList": "{% $states.input.fastqIdList %}",
+                "fileUriByFastqIdMap": "{% $states.result.Payload.fileUriByFastqIdMap %}"
+              },
+              "Arguments": {
+                "FunctionName": "${__generate_fastq_uri_by_fastq_id_map_lambda_function_arn__}",
+                "Payload": {
+                  "fastqListRows": "{% $inputs.normalFastqListRows %}",
+                  "fastqIdList": "{% $states.input.fastqIdList %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Decompress ORA data to cache dir"
+            },
+            "Decompress ORA data to cache dir": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::events:putEvents.waitForTaskToken",
+              "Arguments": {
+                "Entries": [
+                  {
+                    "Detail": {
+                      "taskToken": "{% $states.context.Task.Token %}",
+                      "payload": {
+                        "fastqIdList": "{% $states.input.fastqIdList %}",
+                        "outputUriPrefix": "{% $engineParameters.cacheUri %}",
+                        "fileUriByFastqIdMap": "{% $states.input.fileUriByFastqIdMap %}"
+                      }
+                    },
+                    "DetailType": "${__fastq_decompression_request_detail_type__}",
+                    "EventBusName": "${__event_bus_name__}",
+                    "Source": "${__stack_source__}"
+                  }
+                ]
+              },
+              "Output": {
+                "fileUriByFastqIdMap": "{% $states.input.fileUriByFastqIdMap %}",
+                "decompressedFileList": "{% $states.result.decompressedFileList %}"
+              },
+              "Next": "Collect ORA outputs"
+            },
+            "Collect ORA outputs": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": {
+                "normalFastqListRows": "{% $states.result.Payload.fastqListRows %}"
+              },
+              "Arguments": {
+                "FunctionName": "${__collect_ora_outputs_lambda_function_arn__}",
+                "Payload": {
+                  "fileUriByFastqIdMap": "{% $states.input.fileUriByFastqIdMap %}",
+                  "fastqListRows": "{% $inputs.normalFastqListRows %}",
+                  "decompressedFileList": "{% $states.input.decompressedFileList %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Has tumor data",
+          "States": {
+            "Has tumor data": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "Determine fastq compression type (tumor)",
+                  "Condition": "{% $inputs.tumorFastqListRows ? true : false %}"
+                }
+              ],
+              "Default": "No changes required (tumor)"
+            },
+            "Determine fastq compression type (tumor)": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": {
+                "compressionType": "{% $states.result.Payload.compressionType %}"
+              },
+              "Arguments": {
+                "FunctionName": "${__determine_fastq_compression_type_lambda_function_arn__}",
+                "Payload": {
+                  "fastqListRows": "{% $inputs.tumorFastqListRows %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Is Ora inputs (tumor)"
+            },
+            "Is Ora inputs (tumor)": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "Get fastq ids from fastq rgid list (tumor)",
+                  "Condition": "{% $states.input.compressionType = 'ORA' %}"
+                }
+              ],
+              "Default": "No changes required (tumor)"
+            },
+            "No changes required (tumor)": {
+              "Type": "Pass",
+              "End": true,
+              "Output": {}
+            },
+            "Get fastq ids from fastq rgid list (tumor)": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": {
+                "fastqIdList": "{% $states.result.Payload.fastqIdList %}"
+              },
+              "Arguments": {
+                "FunctionName": "${__get_fastq_id_list_from_rgid_list_lambda_function_arn__}",
+                "Payload": {
+                  "fastqRgidList": "{% $tags.tumorFastqRgidList %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Generate fastq uri by fastq id map (tumor)"
+            },
+            "Generate fastq uri by fastq id map (tumor)": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": {
+                "fastqIdList": "{% $states.input.fastqIdList %}",
+                "fileUriByFastqIdMap": "{% $states.result.Payload.fileUriByFastqIdMap %}"
+              },
+              "Arguments": {
+                "FunctionName": "${__generate_fastq_uri_by_fastq_id_map_lambda_function_arn__}",
+                "Payload": {
+                  "fastqListRows": "{% $inputs.tumorFastqListRows %}",
+                  "fastqIdList": "{% $states.input.fastqIdList %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Decompress ORA data to cache dir (tumor)"
+            },
+            "Decompress ORA data to cache dir (tumor)": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::events:putEvents.waitForTaskToken",
+              "Arguments": {
+                "Entries": [
+                  {
+                    "Detail": {
+                      "taskToken": "{% $states.context.Task.Token %}",
+                      "payload": {
+                        "fastqIdList": "{% $states.input.fastqIdList %}",
+                        "outputUriPrefix": "{% $engineParameters.cacheUri %}",
+                        "fileUriByFastqIdMap": "{% $states.input.fileUriByFastqIdMap %}"
+                      }
+                    },
+                    "DetailType": "${__fastq_decompression_request_detail_type__}",
+                    "EventBusName": "${__event_bus_name__}",
+                    "Source": "${__stack_source__}"
+                  }
+                ]
+              },
+              "Output": {
+                "fileUriByFastqIdMap": "{% $states.input.fileUriByFastqIdMap %}",
+                "decompressedFileList": "{% $states.result.decompressedFileList %}"
+              },
+              "Next": "Collect ORA outputs (tumor)"
+            },
+            "Collect ORA outputs (tumor)": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": {
+                "tumorFastqListRows": "{% $states.result.Payload.fastqListRows %}"
+              },
+              "Arguments": {
+                "FunctionName": "${__collect_ora_outputs_lambda_function_arn__}",
+                "Payload": {
+                  "fileUriByFastqIdMap": "{% $states.input.fileUriByFastqIdMap %}",
+                  "fastqListRows": "{% $inputs.tumorFastqListRows %}",
+                  "decompressedFileList": "{% $states.input.decompressedFileList %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      ],
+      "Assign": {
+        "inputs": "{% [\n  $inputs,\n  ($states.result ~> $merge)\n] ~> $merge %}"
       }
     },
     "Convert Oncoanalyser WGTS DNA Ready Event to ICAv2 WES Event": {
@@ -15,7 +377,7 @@
       "Arguments": {
         "FunctionName": "${__convert_ready_event_inputs_to_icav2_wes_event_inputs_lambda_function_arn__}",
         "Payload": {
-          "inputs": "{% $oncoanalyserWgtsDnaReadyEventDetail.payload.data.inputs %}"
+          "inputs": "{% $inputs %}"
         }
       },
       "Retry": [

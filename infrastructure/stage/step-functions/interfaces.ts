@@ -108,10 +108,18 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'getFastqRgidsFromLibraryId',
     'getLibraries',
     'getMetadataTags',
+    'getPrefixFromProjectId',
+    'getFastqListRowsFromFastqRgidList',
     // Validation lambda
     'validateDraftDataCompleteSchema',
   ],
   validateDraftToReady: ['postSchemaValidation', 'validateDraftDataCompleteSchema'],
-  readyEventToIcav2WesRequestEvent: ['convertReadyEventInputsToIcav2WesEventInputs'],
+  readyEventToIcav2WesRequestEvent: [
+    'convertReadyEventInputsToIcav2WesEventInputs',
+    'determineFastqCompressionType',
+    'getFastqIdListFromRgidList',
+    'generateFastqUriByFastqIdMap',
+    'collectOraOutputs',
+  ],
   icav2WesAscEventToWorkflowRscEvent: ['convertIcav2WesEventToWrscEvent'],
 };

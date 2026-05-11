@@ -8,7 +8,12 @@ import {
   TEST_DATA_BUCKET,
 } from '@orcabus/platform-cdk-constructs/shared-config/s3';
 // Local
-import { Genome, NotInBuiltInHmfReferenceGenomesType, WorkflowVersionType } from './interfaces';
+import {
+  Genome,
+  NotInBuiltInHmfReferenceGenomesType,
+  PayloadVersionType,
+  WorkflowVersionType,
+} from './interfaces';
 
 /* Directory constants */
 export const APP_ROOT = path.join(__dirname, '../../app');
@@ -23,7 +28,7 @@ export const WORKFLOW_NAME = 'oncoanalyser-wgts-dna';
 // existing production workflow, we need to filter on the payload version
 // to prevent the wrong service from being triggered
 export const DEFAULT_WORKFLOW_VERSION: WorkflowVersionType = '2.2.0';
-export const DEFAULT_PAYLOAD_VERSION = '2025.08.05';
+export const DEFAULT_PAYLOAD_VERSION: PayloadVersionType = '2025.08.05';
 
 export const WORKFLOW_LOGS_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}logs/${WORKFLOW_NAME}/`;
 export const WORKFLOW_OUTPUT_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}analysis/${WORKFLOW_NAME}/`;
@@ -156,6 +161,7 @@ export const FASTQ_SYNC_DETAIL_TYPE = 'FastqSync';
 export const WORKFLOW_MANAGER_EVENT_SOURCE = 'orcabus.workflowmanager';
 export const ICAV2_WES_EVENT_SOURCE = 'orcabus.icav2wesmanager';
 export const DRAGEN_WGTS_DNA_WORKFLOW_NAME = 'dragen-wgts-dna';
+export const FASTQ_DECOMPRESSION_REQUEST_DETAIL_TYPE = 'OraDecompressionRequestSync';
 
 /* Event rule constants */
 export const DRAFT_STATUS = 'DRAFT';

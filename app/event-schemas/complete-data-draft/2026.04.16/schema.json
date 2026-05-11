@@ -12,7 +12,7 @@
     "cacheUri": {
       "allOf": [
         {
-          "$ref": "#/$defs/s3UriDirectory"
+          "$ref": "#/$defs/s3Uri"
         },
         {
           "oneOf": [
@@ -27,7 +27,7 @@
     "logsUri": {
       "allOf": [
         {
-          "$ref": "#/$defs/s3UriDirectory"
+          "$ref": "#/$defs/s3Uri"
         },
         {
           "type": "string",
@@ -38,7 +38,7 @@
     "outputUri": {
       "allOf": [
         {
-          "$ref": "#/$defs/s3UriDirectory"
+          "$ref": "#/$defs/s3Uri"
         },
         {
           "oneOf": [
@@ -53,6 +53,42 @@
           ]
         }
       ]
+    },
+    "fastqListRow": {
+      "type": "object",
+      "properties": {
+        "rgid": {
+          "type": "string"
+        },
+        "rglb": {
+          "type": "string"
+        },
+        "rgsm": {
+          "type": "string"
+        },
+        "lane": {
+          "type": "integer"
+        },
+        "rgcn": {
+          "type": "string"
+        },
+        "rgds": {
+          "type": "string"
+        },
+        "rgdt": {
+          "type": "string"
+        },
+        "rgpl": {
+          "type": "string"
+        },
+        "read1FileUri": {
+          "$ref": "#/$defs/s3Uri"
+        },
+        "read2FileUri": {
+          "$ref": "#/$defs/s3Uri"
+        }
+      },
+      "required": ["rgid", "rgsm", "read1FileUri"]
     },
     "genomes": {
       "type": "object",
@@ -111,6 +147,9 @@
     "tags": {
       "type": "object",
       "properties": {
+        "fromFastq": {
+          "type": "boolean"
+        },
         "libraryId": {
           "type": "string",
           "examples": ["L2401540"]
@@ -153,7 +192,43 @@
         "tumorFastqRgidList"
       ]
     },
-    "inputs": {
+    "fastqDataInputs": {
+      "type": "object",
+      "properties": {
+        "tumorFastqListRows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fastqListRow"
+          }
+        },
+        "normalFastqListRows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fastqListRow"
+          }
+        }
+      },
+      "required": ["normalFastqListRows"]
+    },
+    "alignmentDataInputs": {
+      "type": "object",
+      "properties": {
+        "tumorDnaBamUri": {
+          "type": "string",
+          "examples": [
+            "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401541__L2401540__hg38__linear__dragen_somatic_variant_calling/L2401541_tumor.bam"
+          ]
+        },
+        "normalDnaBamUri": {
+          "type": "string",
+          "examples": [
+            "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401540__hg38__graph__dragen_germline_variant_calling/L2401540.bam"
+          ]
+        }
+      },
+      "required": ["normalDnaBamUri"]
+    },
+    "nonSampleDataInputs": {
       "type": "object",
       "properties": {
         "mode": {
@@ -167,18 +242,6 @@
         "subjectId": {
           "type": "string",
           "examples": ["SBJ05828"]
-        },
-        "tumorDnaBamUri": {
-          "type": "string",
-          "examples": [
-            "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401541__L2401540__hg38__linear__dragen_somatic_variant_calling/L2401541_tumor.bam"
-          ]
-        },
-        "normalDnaBamUri": {
-          "type": "string",
-          "examples": [
-            "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/dragen-wgts-dna/2025080568427197/L2401540__hg38__graph__dragen_germline_variant_calling/L2401540.bam"
-          ]
         },
         "tumorDnaSampleId": {
           "type": "string",
@@ -218,8 +281,6 @@
         "mode",
         "groupId",
         "subjectId",
-        "tumorDnaBamUri",
-        "normalDnaBamUri",
         "tumorDnaSampleId",
         "normalDnaSampleId",
         "genome",
@@ -250,7 +311,7 @@
         }
       },
       "required": ["projectId", "pipelineId", "outputUri", "logsUri", "cacheUri"],
-      "allowAdditionalProperties": true
+      "additionalProperties": true
     }
   },
   "type": "object",
@@ -259,7 +320,19 @@
       "$ref": "#/$defs/tags"
     },
     "inputs": {
-      "$ref": "#/$defs/inputs"
+      "allOf": [
+        {
+          "$ref": "#/$defs/nonSampleDataInputs"
+        },
+        {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/fastqDataInputs"
+            },
+            { "$ref": "#/$defs/alignmentDataInputs" }
+          ]
+        }
+      ]
     },
     "engineParameters": {
       "$ref": "#/$defs/engineParameters"

@@ -124,8 +124,72 @@ DEFAULT_SAMPLESHEET_COLUMNS = [
     "filepath",
 ]
 
+FASTQ_SAMPLESHEET_COLUMNS = [
+    *DEFAULT_SAMPLESHEET_COLUMNS.copy(),
+    "info"
+]
+
 
 def generate_samplesheet_from_inputs(ready_event_inputs: Dict[str, Union[str, Dict[str, str]]]) -> List[Dict[str, str]]:
+    if ready_event_inputs.get('normalDnaBamUri') is not None:
+        return generate_samplesheet_from_input_bams(ready_event_inputs)
+    else:
+        return generate_samplesheet_from_input_fastqs(ready_event_inputs)
+
+
+def generate_samplesheet_from_input_fastqs(ready_event_inputs: Dict[str, Union[str, Dict[str, str]]]) -> List[Dict[str, str]]:
+    samplesheet_df = pd.DataFrame(
+        columns=FASTQ_SAMPLESHEET_COLUMNS,
+        data=[
+            # Normal fastqs
+            *list(map(
+                lambda fastq_list_row_iter_: {
+                    "group_id": ready_event_inputs["groupId"],
+                    "subject_id": ready_event_inputs["subjectId"],
+                    "sample_id": ready_event_inputs["normalDnaSampleId"],
+                    "sample_type": "normal",
+                    "sequence_type": "dna",
+                    "filetype": "fastq",
+                    "info": f"library_id:{fastq_list_row_iter_['rglb']};lane:{str(fastq_list_row_iter_['lane']).zfill(3)}",
+                    "filepath": ";".join(list(filter(
+                        lambda file_iter_: file_iter_ is not None,
+                        [
+                            fastq_list_row_iter_["read1FileUri"],
+                            fastq_list_row_iter_.get("read2FileUri", None),
+                        ]
+                    ))),
+                },
+                ready_event_inputs['normalFastqListRows']
+            )),
+            # Tumor bam
+            *list(map(
+                lambda fastq_list_row_iter_: {
+                    "group_id": ready_event_inputs["groupId"],
+                    "subject_id": ready_event_inputs["subjectId"],
+                    "sample_id": ready_event_inputs["tumorDnaSampleId"],
+                    "sample_type": "tumor",
+                    "sequence_type": "dna",
+                    "filetype": "fastq",
+                    "info": f"library_id:{fastq_list_row_iter_['rglb']};lane:{str(fastq_list_row_iter_['lane']).zfill(3)}",
+                    "filepath": ";".join(list(filter(
+                        lambda file_iter_: file_iter_ is not None,
+                        [
+                            fastq_list_row_iter_["read1FileUri"],
+                            fastq_list_row_iter_.get("read2FileUri", None),
+                        ]
+                    ))),
+                },
+                ready_event_inputs['tumorFastqListRows']
+            ))
+        ]
+    )
+
+    # Convert the DataFrame to a list of dictionaries
+    return cast(List[Dict[str, str]], samplesheet_df.to_dict(orient='records'))
+
+
+def generate_samplesheet_from_input_bams(ready_event_inputs: Dict[str, Union[str, Dict[str, str]]]) -> List[
+    Dict[str, str]]:
     samplesheet_df_bams = pd.DataFrame(
         columns=DEFAULT_SAMPLESHEET_COLUMNS,
         data=[
