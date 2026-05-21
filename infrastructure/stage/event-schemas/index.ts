@@ -1,6 +1,7 @@
 import * as schemas from 'aws-cdk-lib/aws-eventschemas';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import {
+  DEFAULT_PAYLOAD_VERSION,
   EVENT_SCHEMAS_DIR,
   SCHEMA_REGISTRY_NAME,
   SSM_SCHEMA_ROOT,
@@ -46,8 +47,6 @@ export function buildSchemas(scope: Construct) {
           schemaName: schemaName,
           payloadVersion: payloadVersion,
         });
-        // And also a latest ssm parameter for the schema
-        // Likely the one most commonly used
         new ssm.StringParameter(scope, `${schemaName}-${payloadVersion}--ssm`, {
           parameterName: path.join(
             SSM_SCHEMA_ROOT,
@@ -60,6 +59,17 @@ export function buildSchemas(scope: Construct) {
             schemaVersion: schemaObj.attrSchemaVersion,
           }),
         });
+        // And also an ssm parameter for the default used schema
+        if (payloadVersion === DEFAULT_PAYLOAD_VERSION) {
+          new ssm.StringParameter(scope, `${schemaName}-default--ssm`, {
+            parameterName: path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(schemaName), 'default'),
+            stringValue: JSON.stringify({
+              registryName: schemaObj.registryName,
+              schemaName: schemaObj.attrSchemaName,
+              schemaVersion: schemaObj.attrSchemaVersion,
+            }),
+          });
+        }
       }
     }
   }
