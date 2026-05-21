@@ -60,19 +60,15 @@ export function buildSchemas(scope: Construct) {
           }),
         });
         // And also an ssm parameter for the default used schema
-        if (payloadVersion === DEFAULT_PAYLOAD_VERSION){
-            new ssm.StringParameter(scope, `${schemaName}-default--ssm`, {
-              parameterName: path.join(
-                SSM_SCHEMA_ROOT,
-                camelCaseToKebabCase(schemaName),
-                'default'
-              ),
-              stringValue: JSON.stringify({
-                registryName: schemaObj.registryName,
-                schemaName: schemaObj.attrSchemaName,
-                schemaVersion: schemaObj.attrSchemaVersion,
-              }),
-            });
+        if (payloadVersion === DEFAULT_PAYLOAD_VERSION) {
+          new ssm.StringParameter(scope, `${schemaName}-default--ssm`, {
+            parameterName: path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(schemaName), 'default'),
+            stringValue: JSON.stringify({
+              registryName: schemaObj.registryName,
+              schemaName: schemaObj.attrSchemaName,
+              schemaVersion: schemaObj.attrSchemaVersion,
+            }),
+          });
         }
       }
     }
