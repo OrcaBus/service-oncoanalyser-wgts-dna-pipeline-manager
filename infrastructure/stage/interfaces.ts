@@ -13,7 +13,6 @@ import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accoun
 
 export interface StatefulApplicationStackConfig {
   // Values
-  // Detail
   ssmParameterValues: SsmParameterValues;
 
   // Keys
