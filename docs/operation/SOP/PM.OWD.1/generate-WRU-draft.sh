@@ -165,7 +165,7 @@ compare_script_version_to_repo(){
         # Get the first occurrence with grep -m1 (SOP_VERSION="YYYY.MM.DD")
         # Remove the SOP_VERSION= prefix ("YYYY.MM.DD")
         # Remove quotes (YYYY.MM.DD)
-        grep -m1 "SOP_VERSION" | \
+        grep -m1 "SOP_VERSION=" | \
         sed 's/^SOP_VERSION=//' | \
         jq --raw-output
       ) \
