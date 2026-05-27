@@ -23,6 +23,7 @@ from orcabus_api_tools.workflow.models import WorkflowRunDetail
 NON_SUCCEEDED_TERMINATED_STATUS_LIST = [
     'FAILED',
     'ABORTED',
+    'DEPRECATED',
     'RESOLVED'
 ]
 
