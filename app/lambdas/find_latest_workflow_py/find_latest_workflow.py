@@ -15,9 +15,8 @@ from orcabus_api_tools.workflow import (
 from orcabus_api_tools.workflow.models import WorkflowRunDetail
 
 # Globals
-NON_SUCCEEDED_TERMINATED_STATUS_LIST = [
-    'FAILED',
-    'ABORTED',
+TERMINAL_DEPRECATED_STATES = [
+    'DEPRECATED',
     'RESOLVED'
 ]
 
@@ -65,23 +64,22 @@ def handler(event, context):
             workflow_status == 'SUCCEEDED' and
             len(workflows_list) > 1
         ):
-            # We need to make sure that we dont have any workflows that are still running
-            # That was started AFTER the last succeeded one
-            # Get the most recent run (based on run state change) since some drafts can sit for a while
-            recent_run_status = sorted(
-                workflows_list,
-                key=lambda workflow_iter_: workflow_iter_['currentState']['orcabusId'],
-                reverse=True
-            )[0]['currentState']['status']
-            if (
-                    # Not the status we're after (SUCCEEDED) AND
-                    not recent_run_status == workflow_status and
-                    # Not in a non-succeeded terminated state (FAILED, ABORTED, RESOLVED), i.e still pending or running
-                    not recent_run_status in NON_SUCCEEDED_TERMINATED_STATUS_LIST
+
+            # First remove DEPRECATED / RESOLVED runs from the list
+            # Since the most recent appropriate run registered may not be the last
+            workflows_list = list(filter(
+                lambda workflow_run_iter: workflow_run_iter['currentState']['status'] not in TERMINAL_DEPRECATED_STATES,
+                workflows_list
+            ))
+
+            # Now check the latest workflow is SUCCEEDED
+            if not (
+                    sorted(
+                        workflows_list,
+                        key=lambda workflow_iter_: workflow_iter_['orcabusId'],
+                        reverse=True
+                    )[0]['currentState']['status'] == workflow_status
             ):
-                # If this is the case, we have a workflow that is still running that was started after the last succeeded one,
-                # so we should not return any workflows as the latest one is still running and we want to wait for it to finish
-                # before returning any workflows
                 return {
                     "workflowRunObject": None
                 }
