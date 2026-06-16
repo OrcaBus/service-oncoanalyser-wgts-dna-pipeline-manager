@@ -7,10 +7,11 @@ import { buildAllStepFunctions } from './step-functions';
 import { buildAllEventRules } from './event-rules';
 import { buildAllEventBridgeTargets } from './event-targets';
 import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
+import { GitStack } from '@orcabus/platform-cdk-constructs/deployment-stack-pipeline';
 
 export type StatelessApplicationStackProps = cdk.StackProps & StatelessApplicationStackConfig;
 
-export class StatelessApplicationStack extends cdk.Stack {
+export class StatelessApplicationStack extends GitStack {
   public readonly stageName: StageName;
 
   constructor(scope: Construct, id: string, props: StatelessApplicationStackProps) {
