@@ -73,6 +73,12 @@ def handler(event, context):
     new_data_object["inputs"]["tumorDnaBamUri"] = dragen_tumor_bam_uri
     new_data_object["inputs"]["normalDnaBamUri"] = dragen_normal_bam_uri
 
+    # Drop null keys in inputs
+    new_data_object["inputs"] = dict(filter(
+        lambda kv_iter_: kv_iter_[1] is not None,
+        new_data_object["inputs"].copy().items()
+    ))
+
     # Update the inputs with the dragen draft payload data
     oncoanalyser_draft_workflow_update["payload"] = {
         "version": payload['version'],
