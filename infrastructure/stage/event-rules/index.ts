@@ -12,7 +12,6 @@ import { EventPattern, Rule } from 'aws-cdk-lib/aws-events';
 import * as events from 'aws-cdk-lib/aws-events';
 import { Construct } from 'constructs';
 import {
-  DEFAULT_PAYLOAD_VERSION,
   DRAFT_STATUS,
   DRAGEN_WGTS_DNA_WORKFLOW_NAME,
   ICAV2_WES_EVENT_SOURCE,
@@ -24,6 +23,7 @@ import {
   WORKFLOW_NAME,
   WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
 } from '../constants';
+import { payloadVersionList } from '../interfaces';
 
 /*
 https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-pattern-operators.html
@@ -79,7 +79,9 @@ function buildWorkflowManagerReadyEventPattern(): EventPattern {
       },
       status: [READY_STATUS],
       payload: {
-        version: [DEFAULT_PAYLOAD_VERSION],
+        $or: payloadVersionList.map((payloadVersion) => ({
+          version: [payloadVersion],
+        })),
       },
     },
   };
