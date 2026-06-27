@@ -321,7 +321,7 @@ def handler(event, context):
     """
 
     # Get the ready event inputs
-    ready_event_inputs: Dict[str, Union[str, Dict[str, str]]] = event.get("inputs", {})
+    ready_event_inputs: ReadyEventInputsType = event.get("inputs", {})
 
     # Extract necessary fields from the ready event inputs
     return {
