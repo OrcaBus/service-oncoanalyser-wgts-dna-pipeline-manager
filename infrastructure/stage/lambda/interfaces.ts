@@ -136,6 +136,7 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   },
   // Convert ready to ICAv2 WES Event - no requirements
   convertReadyEventInputsToIcav2WesEventInputs: {
+    needsOrcabusApiTools: true,
     needsHigherMemory: true,
   },
   determineFastqCompressionType: {},

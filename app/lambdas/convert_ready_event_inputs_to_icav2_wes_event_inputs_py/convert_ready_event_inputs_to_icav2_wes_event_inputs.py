@@ -102,8 +102,11 @@ To generate an output like the following
 """
 
 # Typing imports
-from typing import List, Dict, Union, cast
+from typing import List, Dict, Union, cast, Literal, TypedDict
 import pandas as pd
+
+# Layer imports
+from orcabus_api_tools.fastq.models import FastqListRowDict
 
 # Globals
 DEFAULT_MODE = "wgts"
@@ -129,26 +132,83 @@ FASTQ_SAMPLESHEET_COLUMNS = [
     "info"
 ]
 
+# Models
+SampleType = Literal["normal", "tumor"]
+SequenceType = Literal["dna"]
 
-def generate_samplesheet_from_inputs(ready_event_inputs: Dict[str, Union[str, Dict[str, str]]]) -> List[Dict[str, str]]:
+
+class ReadyEventInputsBase(TypedDict):
+    # Metadata
+    groupId: str
+    subjectId: str
+    normalDnaSampleId: str
+    tumorDnaSampleId: str
+
+
+class ReadyEventInputsFastq(ReadyEventInputsBase):
+    # FQLRs
+    normalFastqListRows: List[FastqListRowDict]
+    tumorFastqListRows: List[FastqListRowDict]
+
+
+class ReadyEventInputsBam(ReadyEventInputsBase):
+    normalDnaBamUri: str
+    tumorDnaBamUri: str
+
+
+ReadyEventInputsType = Union[ReadyEventInputsFastq, ReadyEventInputsBam]
+
+
+def generate_samplesheet_from_inputs(
+        ready_event_inputs: ReadyEventInputsType
+) -> List[Dict[str, str]]:
     if ready_event_inputs.get('normalDnaBamUri') is not None:
-        return generate_samplesheet_from_input_bams(ready_event_inputs)
+        return generate_samplesheet_from_input_bams(cast(ReadyEventInputsBam, ready_event_inputs))
     else:
-        return generate_samplesheet_from_input_fastqs(ready_event_inputs)
+        return generate_samplesheet_from_input_fastqs(cast(ReadyEventInputsFastq, ready_event_inputs))
 
 
-def generate_samplesheet_from_input_fastqs(ready_event_inputs: Dict[str, Union[str, Dict[str, str]]]) -> List[Dict[str, str]]:
-    samplesheet_df = pd.DataFrame(
-        columns=FASTQ_SAMPLESHEET_COLUMNS,
-        data=[
-            # Normal fastqs
-            *list(map(
-                lambda fastq_list_row_iter_: {
-                    "group_id": ready_event_inputs["groupId"],
-                    "subject_id": ready_event_inputs["subjectId"],
-                    "sample_id": ready_event_inputs["normalDnaSampleId"],
-                    "sample_type": "normal",
-                    "sequence_type": "dna",
+def generate_samplesheet_rows_from_fastqs(
+        group_id: str,
+        subject_id: str,
+        sample_id: str,
+        sample_type: SampleType,
+        sequence_type: SequenceType,
+        fastq_list_rows: List[FastqListRowDict],
+) -> pd.DataFrame:
+    """
+    Given a list of fastq list rows, generate a list of samplesheet rows.
+    Ensure that there are no duplicate lanes.
+    :param group_id:
+    :param subject_id:
+    :param sample_id:
+    :param sample_type:
+    :param sequence_type:
+    :param fastq_list_rows:
+    :return:
+    """
+
+    # Set lanes used
+    lanes_used = set()
+    # Set list of series
+    rows_series_list: List[pd.Series] = []
+
+    # Ensure that there are no duplicate lanes
+    for fastq_list_row_iter_ in fastq_list_rows.copy():
+        # Continue to add lane ids to the lanes_used set until we find a lane that is not in the lanes_used set
+        while fastq_list_row_iter_['lane'] in lanes_used:
+            fastq_list_row_iter_['lane'] += 1
+        # Add lane to lanes_used set
+        lanes_used.add(fastq_list_row_iter_['lane'])
+        rows_series_list.append(
+            pd.Series(
+                index=FASTQ_SAMPLESHEET_COLUMNS,
+                data={
+                    "group_id": group_id,
+                    "subject_id": subject_id,
+                    "sample_id": sample_id,
+                    "sample_type": sample_type,
+                    "sequence_type": sequence_type,
                     "filetype": "fastq",
                     "info": f"library_id:{fastq_list_row_iter_['rglb']};lane:{str(fastq_list_row_iter_['lane']).zfill(3)}",
                     "filepath": ";".join(list(filter(
@@ -157,39 +217,46 @@ def generate_samplesheet_from_input_fastqs(ready_event_inputs: Dict[str, Union[s
                             fastq_list_row_iter_["read1FileUri"],
                             fastq_list_row_iter_.get("read2FileUri", None),
                         ]
-                    ))),
-                },
-                ready_event_inputs['normalFastqListRows']
-            )),
-            # Tumor bam
-            *list(map(
-                lambda fastq_list_row_iter_: {
-                    "group_id": ready_event_inputs["groupId"],
-                    "subject_id": ready_event_inputs["subjectId"],
-                    "sample_id": ready_event_inputs["tumorDnaSampleId"],
-                    "sample_type": "tumor",
-                    "sequence_type": "dna",
-                    "filetype": "fastq",
-                    "info": f"library_id:{fastq_list_row_iter_['rglb']};lane:{str(fastq_list_row_iter_['lane']).zfill(3)}",
-                    "filepath": ";".join(list(filter(
-                        lambda file_iter_: file_iter_ is not None,
-                        [
-                            fastq_list_row_iter_["read1FileUri"],
-                            fastq_list_row_iter_.get("read2FileUri", None),
-                        ]
-                    ))),
-                },
-                ready_event_inputs['tumorFastqListRows']
-            ))
-        ]
-    )
+                    )))
+                }
+            )
+        )
+
+    # Return the DataFrame
+    return pd.DataFrame(rows_series_list)
+
+
+def generate_samplesheet_from_input_fastqs(
+        ready_event_inputs: ReadyEventInputsFastq
+) -> List[Dict[str, str]]:
+    samplesheet_df = pd.concat([
+        # Normal fastqs
+        generate_samplesheet_rows_from_fastqs(
+            group_id=ready_event_inputs["groupId"],
+            subject_id=ready_event_inputs["subjectId"],
+            sample_id=ready_event_inputs["normalDnaSampleId"],
+            sample_type="normal",
+            sequence_type="dna",
+            fastq_list_rows=ready_event_inputs['normalFastqListRows']
+        ),
+        # Tumor fastqs
+        generate_samplesheet_rows_from_fastqs(
+            group_id=ready_event_inputs["groupId"],
+            subject_id=ready_event_inputs["subjectId"],
+            sample_id=ready_event_inputs["normalDnaSampleId"],
+            sample_type="tumor",
+            sequence_type="dna",
+            fastq_list_rows=ready_event_inputs['tumorFastqListRows']
+        )
+    ])
 
     # Convert the DataFrame to a list of dictionaries
     return cast(List[Dict[str, str]], samplesheet_df.to_dict(orient='records'))
 
 
-def generate_samplesheet_from_input_bams(ready_event_inputs: Dict[str, Union[str, Dict[str, str]]]) -> List[
-    Dict[str, str]]:
+def generate_samplesheet_from_input_bams(
+        ready_event_inputs: ReadyEventInputsBam
+) -> List[Dict[str, str]]:
     samplesheet_df_bams = pd.DataFrame(
         columns=DEFAULT_SAMPLESHEET_COLUMNS,
         data=[
@@ -254,7 +321,7 @@ def handler(event, context):
     """
 
     # Get the ready event inputs
-    ready_event_inputs: Dict[str, Union[str, Dict[str, str]]] = event.get("inputs", {})
+    ready_event_inputs: ReadyEventInputsType = event.get("inputs", {})
 
     # Extract necessary fields from the ready event inputs
     return {
