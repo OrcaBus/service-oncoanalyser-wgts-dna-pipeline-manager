@@ -217,19 +217,46 @@ def generate_samplesheet_rows_from_fastqs(
                             fastq_list_row_iter_["read1FileUri"],
                             fastq_list_row_iter_.get("read2FileUri", None),
                         ]
-                    ))),
-                },
-                ready_event_inputs['tumorFastqListRows']
-            ))
-        ]
-    )
+                    )))
+                }
+            )
+        )
+
+    # Return the DataFrame
+    return pd.DataFrame(rows_series_list)
+
+
+def generate_samplesheet_from_input_fastqs(
+        ready_event_inputs: ReadyEventInputsFastq
+) -> List[Dict[str, str]]:
+    samplesheet_df = pd.concat([
+        # Normal fastqs
+        generate_samplesheet_rows_from_fastqs(
+            group_id=ready_event_inputs["groupId"],
+            subject_id=ready_event_inputs["subjectId"],
+            sample_id=ready_event_inputs["normalDnaSampleId"],
+            sample_type="normal",
+            sequence_type="dna",
+            fastq_list_rows=ready_event_inputs['normalFastqListRows']
+        ),
+        # Tumor fastqs
+        generate_samplesheet_rows_from_fastqs(
+            group_id=ready_event_inputs["groupId"],
+            subject_id=ready_event_inputs["subjectId"],
+            sample_id=ready_event_inputs["normalDnaSampleId"],
+            sample_type="tumor",
+            sequence_type="dna",
+            fastq_list_rows=ready_event_inputs['tumorFastqListRows']
+        )
+    ])
 
     # Convert the DataFrame to a list of dictionaries
     return cast(List[Dict[str, str]], samplesheet_df.to_dict(orient='records'))
 
 
-def generate_samplesheet_from_input_bams(ready_event_inputs: Dict[str, Union[str, Dict[str, str]]]) -> List[
-    Dict[str, str]]:
+def generate_samplesheet_from_input_bams(
+        ready_event_inputs: ReadyEventInputsBam
+) -> List[Dict[str, str]]:
     samplesheet_df_bams = pd.DataFrame(
         columns=DEFAULT_SAMPLESHEET_COLUMNS,
         data=[
