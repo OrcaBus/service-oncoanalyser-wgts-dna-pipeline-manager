@@ -243,7 +243,7 @@ def generate_samplesheet_from_input_fastqs(
         generate_samplesheet_rows_from_fastqs(
             group_id=ready_event_inputs["groupId"],
             subject_id=ready_event_inputs["subjectId"],
-            sample_id=ready_event_inputs["normalDnaSampleId"],
+            sample_id=ready_event_inputs["tumorDnaSampleId"],
             sample_type="tumor",
             sequence_type="dna",
             fastq_list_rows=ready_event_inputs['tumorFastqListRows']
