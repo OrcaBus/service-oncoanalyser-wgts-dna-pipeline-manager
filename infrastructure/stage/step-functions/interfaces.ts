@@ -12,24 +12,24 @@ export type StateMachineName =
   | 'glueSucceededEventsToDraftUpdate'
   // Draft populator
   | 'populateDraftData'
-  // Validate draft to ready
-  | 'validateDraftToReady'
+  // Validate draft data and put ready event
+  | 'validateDraftDataAndPutReadyEvent'
   // Ready-to-Submitted
   | 'readyEventToIcav2WesRequestEvent'
   // Post-submission event conversion
-  | 'icav2WesAscEventToWorkflowRscEvent';
+  | 'icav2WesEventToWrscEvent';
 
 export const stateMachineNameList: StateMachineName[] = [
   // Glue code
   'glueSucceededEventsToDraftUpdate',
   // Draft populator
   'populateDraftData',
-  // Validate draft to ready
-  'validateDraftToReady',
+  // Validate draft data and put ready event
+  'validateDraftDataAndPutReadyEvent',
   // Ready-to-Submitted
   'readyEventToIcav2WesRequestEvent',
   // Post-submission event conversion
-  'icav2WesAscEventToWorkflowRscEvent',
+  'icav2WesEventToWrscEvent',
 ];
 
 // Requirements interface for Step Functions
@@ -68,8 +68,8 @@ export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunction
     needsEventPutPermission: true,
     needsSsmParameterStoreAccess: true,
   },
-  // Validate draft to ready
-  validateDraftToReady: {
+  // Validate draft data and put ready event
+  validateDraftDataAndPutReadyEvent: {
     needsEventPutPermission: true,
   },
   // Ready-to-Submitted
@@ -77,7 +77,7 @@ export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunction
     needsEventPutPermission: true,
   },
   // Post-submission event conversion
-  icav2WesAscEventToWorkflowRscEvent: {
+  icav2WesEventToWrscEvent: {
     needsEventPutPermission: true,
   },
 };
@@ -103,6 +103,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'generateWruEventObjectWithMergedData',
     'getLatestPayloadFromPortalRunId',
     'getAnalysisStorageSizeFromBasecountEst',
+    'getMissingSchemaFields',
     // Draft Builder lambdas
     'getFastqIdListFromRgidList',
     'getFastqRgidsFromLibraryId',
@@ -112,14 +113,17 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'getFastqListRowsFromFastqRgidList',
     // Validation lambda
     'validateDraftDataCompleteSchema',
+    // Commentary lambdas
+    'addPopulateDraftComment',
   ],
-  validateDraftToReady: ['postSchemaValidation', 'validateDraftDataCompleteSchema'],
+  validateDraftDataAndPutReadyEvent: ['postSchemaValidation', 'validateDraftDataCompleteSchema'],
   readyEventToIcav2WesRequestEvent: [
+    'addReadyComment',
     'convertReadyEventInputsToIcav2WesEventInputs',
     'determineFastqCompressionType',
     'getFastqIdListFromRgidList',
     'generateFastqUriByFastqIdMap',
     'collectOraOutputs',
   ],
-  icav2WesAscEventToWorkflowRscEvent: ['convertIcav2WesEventToWrscEvent'],
+  icav2WesEventToWrscEvent: ['convertIcav2WesEventToWrscEvent', 'addWesFailureComment'],
 };

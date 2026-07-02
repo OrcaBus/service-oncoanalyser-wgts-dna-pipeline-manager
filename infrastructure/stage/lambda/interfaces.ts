@@ -10,6 +10,7 @@ export type LambdaName =
   | 'generateWruEventObjectWithMergedData'
   | 'getLatestPayloadFromPortalRunId'
   | 'getAnalysisStorageSizeFromBasecountEst'
+  | 'getMissingSchemaFields'
   // Glue lambdas
   // Draft Builder lambdas
   | 'getFastqIdListFromRgidList'
@@ -21,6 +22,10 @@ export type LambdaName =
   // Validation lambda
   | 'postSchemaValidation'
   | 'validateDraftDataCompleteSchema'
+  // Commentary lambdas
+  | 'addPopulateDraftComment'
+  | 'addReadyComment'
+  | 'addWesFailureComment'
   // Ready to ICAv2 WES lambdas
   | 'convertReadyEventInputsToIcav2WesEventInputs'
   | 'determineFastqCompressionType'
@@ -39,6 +44,7 @@ export const lambdaNameList: LambdaName[] = [
   'generateWruEventObjectWithMergedData',
   'getLatestPayloadFromPortalRunId',
   'getAnalysisStorageSizeFromBasecountEst',
+  'getMissingSchemaFields',
   // Glue lambdas
   // Draft Builder lambdas
   'getFastqIdListFromRgidList',
@@ -50,6 +56,9 @@ export const lambdaNameList: LambdaName[] = [
   // Validate Draft Complete Schema
   'postSchemaValidation',
   'validateDraftDataCompleteSchema',
+  // Commentary lambdas
+  'addPopulateDraftComment',
+  'addReadyComment',
   // Ready to ICAv2 WES lambdas
   'convertReadyEventInputsToIcav2WesEventInputs',
   'determineFastqCompressionType',
@@ -57,25 +66,25 @@ export const lambdaNameList: LambdaName[] = [
   'collectOraOutputs',
   // ICAv2 WES to WRSC Event lambdas
   'convertIcav2WesEventToWrscEvent',
+  'addWesFailureComment',
 ];
 
 // Requirements interface for Lambda functions
 export interface LambdaRequirements {
   needsOrcabusApiTools?: boolean;
   needsIcav2Tools?: boolean;
+  needsHigherMemory?: boolean;
   needsSsmParametersAccess?: boolean;
   needsSchemaRegistryAccess?: boolean;
-  needsWorkflowEnvVars?: boolean;
-  needsBucketEnvVars?: boolean;
-  needsHigherMemory?: boolean;
+  needsExternalBucketInfo?: boolean;
+  needsWorkflowInfo?: boolean;
+  needsRepoUrl?: boolean;
 }
 
 // Lambda requirements mapping
 export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   // Shared pre-ready lambdas
-  comparePayload: {
-    needsOrcabusApiTools: true,
-  },
+  comparePayload: {},
   getDraftPayload: {
     needsOrcabusApiTools: true,
   },
@@ -97,6 +106,10 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   getAnalysisStorageSizeFromBasecountEst: {
     needsOrcabusApiTools: true,
   },
+  getMissingSchemaFields: {
+    needsSchemaRegistryAccess: true,
+    needsSsmParametersAccess: true,
+  },
   // Glue lambdas
   // Draft Builder lambdas
   getFastqIdListFromRgidList: {
@@ -114,25 +127,33 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   getPrefixFromProjectId: {
     needsOrcabusApiTools: true,
     needsIcav2Tools: true,
-    needsHigherMemory: true,
   },
   getFastqListRowsFromFastqRgidList: {
     needsOrcabusApiTools: true,
-    needsBucketEnvVars: true,
+    needsExternalBucketInfo: true,
   },
   // Validate Draft Complete schema
   postSchemaValidation: {
     needsOrcabusApiTools: true,
-    needsWorkflowEnvVars: true,
-    needsBucketEnvVars: true,
+    needsWorkflowInfo: true,
+    needsExternalBucketInfo: true,
     needsIcav2Tools: true,
-    needsHigherMemory: true,
   },
   validateDraftDataCompleteSchema: {
     needsOrcabusApiTools: true,
     needsSchemaRegistryAccess: true,
     needsSsmParametersAccess: true,
-    needsWorkflowEnvVars: true,
+    needsWorkflowInfo: true,
+  },
+  // Commentary lambdas
+  addPopulateDraftComment: {
+    needsOrcabusApiTools: true,
+    needsWorkflowInfo: true,
+    needsRepoUrl: true,
+  },
+  addReadyComment: {
+    needsOrcabusApiTools: true,
+    needsWorkflowInfo: true,
   },
   // Convert ready to ICAv2 WES Event - no requirements
   convertReadyEventInputsToIcav2WesEventInputs: {
@@ -149,20 +170,18 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   // Needs OrcaBus toolkit to get the wrsc event
   convertIcav2WesEventToWrscEvent: {
     needsOrcabusApiTools: true,
-    needsWorkflowEnvVars: true,
+    needsWorkflowInfo: true,
+  },
+  addWesFailureComment: {
+    needsOrcabusApiTools: true,
+    needsWorkflowInfo: true,
   },
 };
 
-export interface BuildAllLambdasProps {
-  refDataBucketName: string;
-  testDataBucketName: string;
-}
-
-export interface BuildLambdaProps extends BuildAllLambdasProps {
+export interface LambdaInput {
   lambdaName: LambdaName;
 }
 
-export interface LambdaObject {
-  lambdaName: LambdaName;
+export interface LambdaObject extends LambdaInput {
   lambdaFunction: PythonUvFunction;
 }
