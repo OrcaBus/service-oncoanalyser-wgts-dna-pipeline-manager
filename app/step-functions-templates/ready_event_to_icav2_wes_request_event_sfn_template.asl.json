@@ -1,13 +1,41 @@
 {
-  "Comment": "A description of my state machine",
+  "Comment": "Convert a READY event to an ICAv2 WES request event, with initial comment for traceability",
   "StartAt": "Save inputs",
   "States": {
     "Save inputs": {
       "Type": "Pass",
-      "Next": "Secondary vars",
+      "Next": "Add Ready Comment",
       "Assign": {
         "oncoanalyserWgtsDnaReadyEventDetail": "{% $states.input %}"
       }
+    },
+    "Add Ready Comment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__add_ready_comment_lambda_function_arn__}",
+        "Payload": {
+          "workflowRunId": "{% $oncoanalyserWgtsDnaReadyEventDetail.orcabusId %}",
+          "executionArn": "{% $states.context.Execution.Id %}",
+          "includeOraDecompressionWarning": "{% $oncoanalyserWgtsDnaReadyEventDetail.payload.data.tags.fromFastq ? true : false %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Secondary vars",
+      "Output": "{% $states.input %}"
     },
     "Secondary vars": {
       "Type": "Pass",
