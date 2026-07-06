@@ -227,7 +227,7 @@ def validate_inputs(
             # For folder URIs, verify at least 1 file exists under that prefix
             parsed = urlparse(data_uri)
             bucket = parsed.netloc
-            prefix = str(Path(parsed.path)) + "/"
+            prefix = str(Path(parsed.path)).lstrip("/") + "/"
             files = list_files_recursively(bucket, prefix)
             if not (len(files) > 0):
                 failures.append(
