@@ -63,7 +63,7 @@ export function buildAllEventBridgeTargets(props: EventBridgeTargetsProps) {
             (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscDraft'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
-            (sfnObject) => sfnObject.stateMachineName === 'validateDraftToReady'
+            (sfnObject) => sfnObject.stateMachineName === 'validateDraftDataAndPutReadyEvent'
           )?.sfnObject,
         });
         break;
@@ -89,7 +89,7 @@ export function buildAllEventBridgeTargets(props: EventBridgeTargetsProps) {
             (eventBridgeObject) => eventBridgeObject.ruleName === 'icav2WesAnalysisStateChange'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
-            (sfnObject) => sfnObject.stateMachineName === 'icav2WesAscEventToWorkflowRscEvent'
+            (sfnObject) => sfnObject.stateMachineName === 'icav2WesEventToWrscEvent'
           )?.sfnObject,
         });
         break;

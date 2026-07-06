@@ -123,7 +123,8 @@ function wireUpStateMachinePermissions(props: WireUpPermissionsProps): void {
     [
       {
         id: 'AwsSolutions-IAM5',
-        reason: 'We need to give access for the sfn to invoke all versions of the lambda function',
+        reason:
+          'We invoke $LATEST to allow redrives after Lambda bug fixes without redeploying the state machine',
       },
     ],
     true
@@ -152,7 +153,8 @@ function wireUpStateMachinePermissions(props: WireUpPermissionsProps): void {
       [
         {
           id: 'AwsSolutions-IAM5',
-          reason: 'We need to give access to the full prefix for the SSM parameter store',
+          reason:
+            'Wildcard covers SSM parameters under the workflow root prefix; individual parameter paths include dynamic workflow versions that cannot be enumerated at deploy time',
         },
       ],
       true

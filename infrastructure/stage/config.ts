@@ -7,7 +7,6 @@ import {
   DEFAULT_WORKFLOW_VERSION,
   EVENT_BUS_NAME,
   GENOMES_MAP,
-  REF_DATA_BUCKET_NAME,
   SSM_PARAMETER_PATH_CACHE_PREFIX,
   SSM_PARAMETER_PATH_DEFAULT_WORKFLOW_VERSION,
   SSM_PARAMETER_PATH_ICAV2_PROJECT_ID,
@@ -20,7 +19,6 @@ import {
   SSM_PARAMETER_PATH_PREFIX_INPUTS_BY_WORKFLOW_VERSION,
   SSM_PARAMETER_PATH_PREFIX_PIPELINE_IDS_BY_WORKFLOW_VERSION,
   SSM_PARAMETER_PATH_WORKFLOW_NAME,
-  TEST_DATA_BUCKET_NAME,
   WORKFLOW_CACHE_PREFIX,
   WORKFLOW_LOGS_PREFIX,
   WORKFLOW_NAME,
@@ -103,10 +101,6 @@ export const getStatelessStackProps = (stage: StageName): StatelessApplicationSt
 
     // SSM Parameter Paths
     ssmParameterPaths: getSsmParameterPaths(),
-
-    // TestData and RefData bucket names
-    testDataBucketName: TEST_DATA_BUCKET_NAME,
-    refDataBucketName: REF_DATA_BUCKET_NAME,
 
     // Stage Name
     stageName: stage,

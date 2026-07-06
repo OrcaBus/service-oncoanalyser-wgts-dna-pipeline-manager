@@ -49,7 +49,7 @@ def handler(event, context):
         try:
             test_data_fqlr_iter = to_fastq_list_row(fastq_id_iter, bucket=environ[TEST_DATA_BUCKET_NAME_ENV_VAR])
             test_data_fastq_list_rows.append(test_data_fqlr_iter)
-        except HTTPError as e:
+        except HTTPError:
             non_test_data_fastq_list_ids.append(fastq_id_iter)
 
     # Re-collect the test-data fastq list rows with the s3 uri prefix if provided

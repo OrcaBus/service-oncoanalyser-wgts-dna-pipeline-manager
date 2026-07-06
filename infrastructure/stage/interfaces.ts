@@ -29,10 +29,6 @@ export interface StatelessApplicationStackConfig {
   // SSM Parameter paths
   ssmParameterPaths: SsmParameterPaths;
 
-  // Bucket Names
-  testDataBucketName: string;
-  refDataBucketName: string;
-
   // Stage Name
   stageName: StageName;
 }

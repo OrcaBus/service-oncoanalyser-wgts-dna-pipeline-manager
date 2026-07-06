@@ -16,11 +16,12 @@ import { payloadVersionList } from '../interfaces';
 
 export function buildSchema(scope: Construct, props: BuildSchemaProps): schemas.CfnSchema {
   // Import the schema file from the schemas directory
+  const kebabCaseName = camelCaseToKebabCase(props.schemaName);
   const schemaPath = path.join(
     EVENT_SCHEMAS_DIR,
-    camelCaseToKebabCase(props.schemaName),
+    kebabCaseName,
     props.payloadVersion,
-    'schema.json'
+    `${kebabCaseName}-schema.json`
   );
 
   // Create a new schema in the Event Schemas service
@@ -59,18 +60,13 @@ export function buildSchemas(scope: Construct) {
             schemaVersion: schemaObj.attrSchemaVersion,
           }),
         });
-        // And also an ssm parameter for the default used schema
-        if (payloadVersion === DEFAULT_PAYLOAD_VERSION) {
-          new ssm.StringParameter(scope, `${schemaName}-default--ssm`, {
-            parameterName: path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(schemaName), 'default'),
-            stringValue: JSON.stringify({
-              registryName: schemaObj.registryName,
-              schemaName: schemaObj.attrSchemaName,
-              schemaVersion: schemaObj.attrSchemaVersion,
-            }),
-          });
-        }
       }
     }
   }
+
+  // Create the default version pointer SSM parameter
+  new ssm.StringParameter(scope, 'completeDataDraft-default--ssm', {
+    parameterName: path.join(SSM_SCHEMA_ROOT, 'complete-data-draft', 'default'),
+    stringValue: DEFAULT_PAYLOAD_VERSION,
+  });
 }

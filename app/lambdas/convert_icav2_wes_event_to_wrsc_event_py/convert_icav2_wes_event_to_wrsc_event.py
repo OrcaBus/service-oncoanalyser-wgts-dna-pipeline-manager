@@ -10,18 +10,12 @@ which is just the groupId from the event inputs.
 # Standard imports
 from copy import deepcopy
 from datetime import datetime, timezone
-from os import environ
 
 # Layer helpers
 from orcabus_api_tools.workflow import (
     get_latest_payload_from_workflow_run,
-    get_workflow_run_from_portal_run_id,
-    add_comment_to_workflow_run
+    get_workflow_run_from_portal_run_id
 )
-
-# Globals
-COMMENT_AUTHOR = "{WORKFLOW_NAME}-icav2-wes-translation-service"
-WORKFLOW_NAME_ENV_VAR = "WORKFLOW_NAME"
 
 
 def handler(event, context):
@@ -58,22 +52,13 @@ def handler(event, context):
     else:
         outputs = None
 
-    if icav2_wes_event.get('errorMessageUri', None) is not None:
-        analysis_failure_type = icav2_wes_event.get('errorType')
-        add_comment_to_workflow_run(
-            workflow_run_orcabus_id=workflow_run['orcabusId'],
-            comment=f"Workflow failed with icav2 wes error type: {analysis_failure_type}",
-            author=COMMENT_AUTHOR.format(
-                WORKFLOW_NAME=environ.get(WORKFLOW_NAME_ENV_VAR)
-            ),
-        )
-        add_comment_to_workflow_run(
-            workflow_run_orcabus_id=workflow_run['orcabusId'],
-            comment=f"More details can be found at {icav2_wes_event['errorMessageUri']}",
-            author=COMMENT_AUTHOR.format(
-                WORKFLOW_NAME=environ.get(WORKFLOW_NAME_ENV_VAR)
-            ),
-        )
+    # Check if the status was FAILED, if so we populate the error message and type
+    if icav2_wes_event['status'] == 'FAILED':
+        error_type = icav2_wes_event.get('errorType', 'UnknownErrorType')
+        error_message_uri = icav2_wes_event.get('errorMessageUri', None)
+    else:
+        error_message_uri = None
+        error_type = None
 
     # Update the latest payload with the outputs if available
     if outputs:
@@ -102,5 +87,7 @@ def handler(event, context):
                 "version": latest_payload['version'],
                 "data": latest_payload['data']
             }
-        }
+        },
+        "errorMessageUri": error_message_uri,
+        "errorType": error_type,
     }

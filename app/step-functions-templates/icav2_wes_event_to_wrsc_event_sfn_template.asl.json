@@ -1,0 +1,92 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Convert ICAv2 WES event to WRSC Event",
+  "States": {
+    "Convert ICAv2 WES event to WRSC Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__convert_icav2_wes_event_to_wrsc_event_lambda_function_arn__}",
+        "Payload": {
+          "icav2WesStateChangeEvent": "{% $states.input %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Workflow status decision tree",
+      "Assign": {
+        "workflowRunStateChangeEvent": "{% $states.result.Payload.workflowRunStateChangeEvent %}",
+        "errorMessageUri": "{% $states.result.Payload.errorMessageUri %}",
+        "errorType": "{% $states.result.Payload.errorType %}"
+      }
+    },
+    "Workflow status decision tree": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Add comment for WES failure",
+          "Condition": "{% $workflowRunStateChangeEvent.status = 'FAILED' %}",
+          "Comment": "Workflow has FAILED status"
+        }
+      ],
+      "Default": "Push WRSC Event"
+    },
+    "Add comment for WES failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__add_wes_failure_comment_lambda_function_arn__}",
+        "Payload": {
+          "errorType": "{% $errorType %}",
+          "errorMessageUri": "{% $errorMessageUri %}",
+          "portalRunId": "{% $workflowRunStateChangeEvent.portalRunId %}",
+          "executionArn": "{% $states.context.Execution.Id %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Push WRSC Event"
+    },
+    "Push WRSC Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $workflowRunStateChangeEvent %}",
+            "DetailType": "${__workflow_run_update_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}

@@ -62,7 +62,8 @@
         "FunctionName": "${__post_schema_validation_lambda_function_arn__}",
         "Payload": {
           "data": "{% $payloadData %}",
-          "workflowRunId": "{% $workflowRunId %}"
+          "workflowRunId": "{% $workflowRunId %}",
+          "executionArn": "{% $states.context.Execution.Id %}"
         }
       },
       "Retry": [
