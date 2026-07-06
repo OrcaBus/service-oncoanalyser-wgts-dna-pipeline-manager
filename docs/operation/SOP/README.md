@@ -13,7 +13,7 @@
 This is the index for SOPs for various tasks handling the Oncoanalyser WGTS DNA Pipeline.
 
 These tasks range from:
-* Installation / deployment of a new CWL Workflow onto the ICAv2 platform
+* Installation / deployment of a new nextflow Workflow onto the ICAv2 platform
 * Verifying a new version of the Oncoanalyser WGTS DNA Pipeline
 * Troubleshooting common issues with the Oncoanalyser WGTS DNA Pipeline
 * Kicking off a reanalysis of a set of samples manually

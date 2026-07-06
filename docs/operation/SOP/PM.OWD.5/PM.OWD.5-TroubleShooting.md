@@ -1,6 +1,6 @@
 # Trouble Shooting
 
-- Version: 1.0
+- Version: 2026.07.03
 - Contact: Alexis Lucattini, [alexisl@unimelb.edu.au](mailto:alexisl@unimelb.edu.au)
 
 Most processes within the Oncoanalyser WGTS DNA Orchestration use AWS Step Functions to manage the workflow.

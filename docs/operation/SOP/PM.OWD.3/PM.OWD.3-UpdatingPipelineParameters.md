@@ -1,6 +1,6 @@
 # Updating Pipeline Parameters
 
-- Version: 1.0
+- Version: 2026.07.03
 - Contact: Alexis Lucattini, [alexisl@unimelb.edu.au](mailto:alexisl@unimelb.edu.au)
 
 This SOP describes how to update SSM parameters for the Oncoanalyser WGTS DNA pipeline.
