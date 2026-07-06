@@ -41,4 +41,4 @@ These tasks range from:
 <a name="pm.owd.5"></a>
 ## Troubleshooting common issues with the Oncoanalyser WGTS DNA Pipeline
 
-* [PM.OWD.5 - Troubleshooting common issues with the Oncoanalyser WGTS DNA Pipeline](PM.OWD.5/PM.OWD.5-TroubleShooting.md)
+* [PM.OWD.5 - Troubleshooting common issues with the Oncoanalyser WGTS DNA Pipeline](PM.OWD.5/PM.OWD.5-Troubleshooting.md)

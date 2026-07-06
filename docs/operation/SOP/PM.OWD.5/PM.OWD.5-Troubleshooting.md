@@ -1,4 +1,4 @@
-# Trouble Shooting
+# Troubleshooting
 
 - Version: 2026.07.03
 - Contact: Alexis Lucattini, [alexisl@unimelb.edu.au](mailto:alexisl@unimelb.edu.au)
