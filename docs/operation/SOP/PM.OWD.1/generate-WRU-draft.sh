@@ -165,7 +165,7 @@ compare_script_version_to_repo(){
         # Get the first occurrence with grep -m1 (SOP_VERSION="YYYY.MM.DD")
         # Remove the SOP_VERSION= prefix ("YYYY.MM.DD")
         # Remove quotes (YYYY.MM.DD)
-        grep -m1 "SOP_VERSION" | \
+        grep -m1 "SOP_VERSION=" | \
         sed 's/^SOP_VERSION=//' | \
         jq --raw-output
       ) \
@@ -288,6 +288,7 @@ get_cognito_user_pool_id_prefix(){
 get_library_obj_from_library_id(){
   local library_id="$1"
   curl --silent --fail --show-error --location \
+    --header "Accept: application/json" \
     --header "Authorization: Bearer ${PORTAL_TOKEN}" \
     --url "https://metadata.$(get_hostname_from_ssm)/api/v1/library?libraryId=${library_id}" | \
   jq --raw-output \
@@ -331,6 +332,7 @@ get_workflow(){
   curl --silent --fail --show-error --location \
     --request GET \
     --get \
+    --header "Accept: application/json" \
     --header "Authorization: Bearer ${PORTAL_TOKEN}" \
     --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflow" \
     --data "$( \
@@ -366,6 +368,7 @@ get_workflow_run(){
   curl --silent --fail --show-error --location \
     --request GET \
     --get \
+    --header "Accept: application/json" \
     --header "Authorization: Bearer ${PORTAL_TOKEN}" \
     --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflowrun?portalRunId=${portal_run_id}" | \
   jq --compact-output --raw-output \
