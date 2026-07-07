@@ -9,8 +9,6 @@ the payload has changed
 
 # Standard library imports
 from deepdiff import DeepDiff
-from typing import Dict, Any
-from requests import HTTPError
 
 def handler(event, context):
     """
