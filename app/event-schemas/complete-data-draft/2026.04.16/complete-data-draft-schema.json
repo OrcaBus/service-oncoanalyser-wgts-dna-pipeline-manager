@@ -208,7 +208,7 @@
           }
         }
       },
-      "required": ["normalFastqListRows"]
+      "required": ["normalFastqListRows", "tumorFastqListRows"]
     },
     "alignmentDataInputs": {
       "type": "object",
@@ -226,7 +226,7 @@
           ]
         }
       },
-      "required": ["normalDnaBamUri"]
+      "required": ["normalDnaBamUri", "tumorDnaBamUri"]
     },
     "nonSampleDataInputs": {
       "type": "object",
