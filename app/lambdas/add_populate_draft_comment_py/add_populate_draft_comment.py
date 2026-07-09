@@ -11,7 +11,7 @@ Provides commentary on state transitions during draft data population:
 
 # Standard imports
 from os import environ
-from typing import Dict, Any
+from typing import Dict, Any, List, Union
 
 # Layer imports
 from orcabus_api_tools.workflow import add_comment_to_workflow_run
@@ -30,6 +30,51 @@ COMMENT_TEMPLATES = {
     "updating_inputs": "Updating inputs — this may take time to complete if awaiting upstream data or unarchiving.",
     "no_change_missing_fields": "Draft payload has not changed since last population attempt. The following required schema fields are still missing or incomplete:\n{missing_fields_list}\n\nTo resolve this, either:\nA) Wait for upstream processes to complete (FASTQ data availability, unarchiving)\nB) Manually provide the missing attributes via a WorkflowRunUpdate event\n\nFor details on upstream dependencies and manual submission, see: {repo_url}",
 }
+
+
+def write_missing_fields_list(
+        missing_fields: List[Union[Dict[str, Any], str]],
+        nest_level: int = 0,
+) -> List[str]:
+    """
+    Generate missing fields list
+    :param missing_fields:
+    :return:
+    """
+    missing_fields_str_list = []
+    for field in missing_fields:
+        if isinstance(field, str):
+            missing_fields_str_list.append(
+                (" " * nest_level) + f"- {field}"
+            )
+        if isinstance(field, dict):
+            for field_key, field_value in field.items():
+                if field_key == "oneOf":
+                    for one_of_idx, one_of_list in enumerate(field_value):
+                        missing_fields_str_list.append(
+                            (" " * nest_level) + "All of:"
+                        )
+                        for one_of_item_path, one_of_item_keys in one_of_list.items():
+                            if isinstance(one_of_item_keys, str):
+                                missing_fields_str_list.append(
+                                    (" " * (nest_level + 1)) + f"- {one_of_item_keys}"
+                                )
+                            elif isinstance(one_of_item_keys, list):
+                                for item in one_of_item_keys:
+                                    missing_fields_str_list.append(
+                                        (" " * (nest_level + 1)) + f"- {item}"
+                                    )
+                            elif isinstance(one_of_item_keys, dict):
+                                missing_fields_str_list.extend(
+                                    write_missing_fields_list(
+                                        [one_of_item_keys],
+                                        nest_level + 1
+                                    )
+                                )
+                        if not one_of_idx == (len(field_value) - 1):
+                            missing_fields_str_list.append((" " * (nest_level)) + f"--- OR ---")
+
+    return missing_fields_str_list  # prefix each with \n-
 
 
 def handler(event: Dict[str, Any], context) -> Dict[str, bool]:
@@ -63,8 +108,9 @@ def handler(event: Dict[str, Any], context) -> Dict[str, bool]:
 
     # Handle the no_change_missing_fields template specially
     if comment_type == "no_change_missing_fields" and missing_fields:
-        missing_fields_list = "\n- ".join([""] + missing_fields)  # prefix each with \n-
-        body = body.format(missing_fields_list=missing_fields_list, repo_url=repo_url)
+        missing_fields_list = write_missing_fields_list(missing_fields)
+        # missing_fields_list = "\n- ".join([""] + missing_fields)  # prefix each with \n-
+        body = body.format(missing_fields_list="\n".join([""] + missing_fields_list), repo_url=repo_url)
     elif comment_type == "no_change_missing_fields":
         body = body.format(missing_fields_list="\n- (none detected)", repo_url=repo_url)
 
