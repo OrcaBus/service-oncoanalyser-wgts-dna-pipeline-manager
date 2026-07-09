@@ -74,7 +74,7 @@
       ],
       "Next": "Did we get a oncoanalyser portal run id",
       "Assign": {
-        "draftPortalRunIdList": "{% $states.result.Payload.workflowRunList ? $states.result.Payload.workflowRunList.(portalRunId) : null %}"
+        "draftPortalRunIdList": "{% $states.result.Payload.workflowRunList ? [ $states.result.Payload.workflowRunList.(portalRunId) ] : null %}"
       }
     },
     "Did we get a oncoanalyser portal run id": {
