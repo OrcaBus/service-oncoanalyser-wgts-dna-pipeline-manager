@@ -70,7 +70,7 @@ def get_one_of_missing_field_summaries(
         schema: dict,
         error: jsonschema.ValidationError,
         path: str
-) -> list[str]:
+) -> list[dict[str, list[str]]]:
     """
     Summarise oneOf validation failures without exposing every nested conditional.
 
@@ -101,13 +101,6 @@ def get_one_of_missing_field_summaries(
                 f"{path}: {option["$ref"].rsplit("/")[-1]} path": missing_field_option_list
             }
         )
-
-    missing_field_options_counted = []
-    for idx, one_of_object in enumerate(missing_field_options, start=1):
-        for required_arg in one_of_object:
-            missing_field_options_counted.append(
-                f"Opt. {idx}: {required_arg}"
-            )
 
     return missing_field_options
 
