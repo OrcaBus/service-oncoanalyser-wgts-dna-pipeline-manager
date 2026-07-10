@@ -51,10 +51,10 @@ def write_missing_fields_list(
             for field_key, field_value in field.items():
                 if field_key == "oneOf":
                     for one_of_idx, one_of_list in enumerate(field_value):
-                        missing_fields_str_list.append(
-                            (" " * nest_level) + "All of:"
-                        )
                         for one_of_item_path, one_of_item_keys in one_of_list.items():
+                            missing_fields_str_list.append(
+                                (" " * nest_level) + f"All of ({one_of_item_path}):"
+                            )
                             if isinstance(one_of_item_keys, str):
                                 missing_fields_str_list.append(
                                     (" " * (nest_level + 1)) + f"- {one_of_item_keys}"
