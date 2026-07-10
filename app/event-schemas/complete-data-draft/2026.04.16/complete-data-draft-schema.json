@@ -199,7 +199,8 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/fastqListRow"
-          }
+          },
+          "minItems": 1
         },
         "normalFastqListRows": {
           "type": "array",
