@@ -28,7 +28,7 @@ export const WORKFLOW_NAME = 'oncoanalyser-wgts-dna';
 // existing production workflow, we need to filter on the payload version
 // to prevent the wrong service from being triggered
 export const DEFAULT_WORKFLOW_VERSION: WorkflowVersionType = '2.2.0';
-export const DEFAULT_PAYLOAD_VERSION: PayloadVersionType = '2025.08.05';
+export const DEFAULT_PAYLOAD_VERSION: PayloadVersionType = '2026.04.16';
 
 export const WORKFLOW_LOGS_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}logs/${WORKFLOW_NAME}/`;
 export const WORKFLOW_OUTPUT_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}analysis/${WORKFLOW_NAME}/`;
