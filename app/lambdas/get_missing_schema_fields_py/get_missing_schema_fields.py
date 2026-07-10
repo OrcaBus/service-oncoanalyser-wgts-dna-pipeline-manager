@@ -158,13 +158,13 @@ def handler(event, context):
                 missing_fields.append(f"{path} ({error.message[:50]})")
 
     # Reduce string duplicates
-    missing_fields_str = list(set(list(filter(
+    missing_fields_str = sorted(set(list(filter(
         lambda missing_field_iter: isinstance(missing_field_iter, str),
         missing_fields
     ))))
 
     missing_fields = missing_fields_str + list(filter(
-        lambda missing_field_iter: isinstance(missing_field_iter, Dict),
+        lambda missing_field_iter: isinstance(missing_field_iter, dict),
         missing_fields
     ))
 
