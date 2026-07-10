@@ -199,7 +199,8 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/fastqListRow"
-          }
+          },
+          "minItems": 1
         },
         "normalFastqListRows": {
           "type": "array",
@@ -208,7 +209,7 @@
           }
         }
       },
-      "required": ["normalFastqListRows"]
+      "required": ["normalFastqListRows", "tumorFastqListRows"]
     },
     "alignmentDataInputs": {
       "type": "object",
@@ -226,7 +227,7 @@
           ]
         }
       },
-      "required": ["normalDnaBamUri"]
+      "required": ["normalDnaBamUri", "tumorDnaBamUri"]
     },
     "nonSampleDataInputs": {
       "type": "object",
