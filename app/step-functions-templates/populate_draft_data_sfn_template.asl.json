@@ -356,19 +356,8 @@
           }
         },
         {
-          "StartAt": "Has tumor library tag (tags)",
+          "StartAt": "Tumor Fastq Rgid list set",
           "States": {
-            "Has tumor library tag (tags)": {
-              "Type": "Choice",
-              "Choices": [
-                {
-                  "Next": "Tumor Fastq Rgid list set",
-                  "Condition": "{% $tags.tumorLibraryId ? true : false %}",
-                  "Comment": "Has tumor library id"
-                }
-              ],
-              "Default": "tumorFastqRgidList is Empty"
-            },
             "Tumor Fastq Rgid list set": {
               "Type": "Choice",
               "Choices": [
@@ -413,11 +402,6 @@
               "Output": {
                 "tumorFastqRgidList": "{% $states.result.Payload.fastqRgidList %}"
               }
-            },
-            "tumorFastqRgidList is Empty": {
-              "Type": "Pass",
-              "Output": {},
-              "End": true
             }
           }
         },
@@ -598,28 +582,8 @@
           }
         },
         {
-          "StartAt": "Has tumor library tag (readsets)",
+          "StartAt": "For each tumor rgid (readsets)",
           "States": {
-            "Has tumor library tag (readsets)": {
-              "Type": "Choice",
-              "Choices": [
-                {
-                  "Next": "Has tumor fastq ids (readsets)",
-                  "Condition": "{% $tags.tumorLibraryId ? true : false %}"
-                }
-              ],
-              "Default": "tumor libraries is empty (readsets)"
-            },
-            "Has tumor fastq ids (readsets)": {
-              "Type": "Choice",
-              "Choices": [
-                {
-                  "Next": "For each tumor rgid (readsets)",
-                  "Condition": "{% $tags.tumorFastqRgidList ? true : false %}"
-                }
-              ],
-              "Default": "tumor libraries is empty (readsets)"
-            },
             "For each tumor rgid (readsets)": {
               "Type": "Map",
               "Items": "{% $tags.tumorFastqRgidList ? $tags.tumorFastqRgidList : [] %}",
@@ -664,11 +628,6 @@
               "Output": {
                 "library": "{% [\n  /* Draft libraries list */\n  $libraries ~>\n  $single(function($libraryIter){\n    $libraryIter.libraryId = $tags.tumorLibraryId \n  }),\n  {\n    \"readsets\": $states.result\n  }\n] ~>\n$merge %}"
               }
-            },
-            "tumor libraries is empty (readsets)": {
-              "Type": "Pass",
-              "End": true,
-              "Output": {}
             }
           }
         }
@@ -813,18 +772,8 @@
                   }
                 },
                 {
-                  "StartAt": "Has tumor fastq rgid list",
+                  "StartAt": "Get fastq id list from rgid list (fqlr-tumor)",
                   "States": {
-                    "Has tumor fastq rgid list": {
-                      "Type": "Choice",
-                      "Choices": [
-                        {
-                          "Next": "Get fastq id list from rgid list (fqlr-tumor)",
-                          "Condition": "{% $tags.tumorFastqRgidList ? true : false %}"
-                        }
-                      ],
-                      "Default": "Pass (1)"
-                    },
                     "Get fastq id list from rgid list (fqlr-tumor)": {
                       "Type": "Task",
                       "Resource": "arn:aws:states:::lambda:invoke",
@@ -931,10 +880,6 @@
                       "Output": {
                         "tumorFastqListRows": "{% $states.result.Payload.fastqListRows %}"
                       }
-                    },
-                    "Pass (1)": {
-                      "Type": "Pass",
-                      "End": true
                     }
                   }
                 }
@@ -945,7 +890,7 @@
               "Type": "Choice",
               "Choices": [
                 {
-                  "Next": "Keep Original germline data",
+                  "Next": "Keep Original alignment data",
                   "Condition": "{% ($inputs.normalDnaBamUri ? true : false) or ($inputs.tumorDnaBamUri ? true : false) %}"
                 }
               ],
@@ -1031,23 +976,8 @@
                   }
                 },
                 {
-                  "StartAt": "Has tumor rgid list",
+                  "StartAt": "Get dragen somatic bam from portal run id",
                   "States": {
-                    "Has tumor rgid list": {
-                      "Type": "Choice",
-                      "Choices": [
-                        {
-                          "Next": "Get dragen somatic bam from portal run id",
-                          "Condition": "{% $tags.tumorFastqRgidList ? true : false %}"
-                        }
-                      ],
-                      "Default": "Pass"
-                    },
-                    "Pass": {
-                      "Type": "Pass",
-                      "End": true,
-                      "Output": {}
-                    },
                     "Get dragen somatic bam from portal run id": {
                       "Type": "Task",
                       "Resource": "arn:aws:states:::lambda:invoke",
@@ -1087,7 +1017,7 @@
               "End": true,
               "Output": {}
             },
-            "Keep Original germline data": {
+            "Keep Original alignment data": {
               "Type": "Pass",
               "End": true,
               "Output": {}
