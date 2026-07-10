@@ -93,14 +93,11 @@ def get_one_of_missing_field_summaries(
         )
 
         if option_missing_fields:
-            for field in option_missing_fields:
-                missing_field_option_list.append(field)
-
-        missing_field_options.append(
-            {
-                f"{path}: {option["$ref"].rsplit("/")[-1]} path": missing_field_option_list
-            }
-        )
+            missing_field_options.append(
+                {
+                    f'{path}: {option["$ref"].rsplit("/")[-1]} path': option_missing_fields
+                }
+            )
 
     return missing_field_options
 
