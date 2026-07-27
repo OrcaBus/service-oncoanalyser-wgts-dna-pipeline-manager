@@ -81,7 +81,6 @@ def get_one_of_missing_field_summaries(
     missing_field_options = []
 
     for idx, option in enumerate(error.validator_value, start=1):
-        missing_field_option_list = []
         if not (isinstance(option, dict) and "$ref" in option):
             continue
 
