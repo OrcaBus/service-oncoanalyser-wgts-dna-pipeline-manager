@@ -1,0 +1,285 @@
+name: pnpm Audit & Auto-fix
+
+on:
+  schedule:
+    # Run daily at 00:05 UTC (10:05 AEST) — offset to avoid caching delays on CVE publication
+    - cron: '5 0 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  audit-and-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.x'
+          cache: 'pnpm'
+
+      - run: corepack enable
+
+      - name: Install yq
+        uses: mikefarah/yq@master
+
+      - name: Check existing open audit PRs
+        id: check-existing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Find open PRs from previous audit runs
+          EXISTING_PR=$(gh pr list \
+            --state open \
+            --search "chore: fix pnpm audit vulnerabilities in:title" \
+            --json number,headRefName \
+            --jq '.[0] // empty')
+
+          if [[ -z "$EXISTING_PR" ]]; then
+            echo "existing_pr=false" >> "$GITHUB_OUTPUT"
+            echo "No existing audit PR found."
+            exit 0
+          fi
+
+          PR_NUMBER=$(echo "$EXISTING_PR" | jq -r '.number')
+          PR_BRANCH=$(echo "$EXISTING_PR" | jq -r '.headRefName')
+          echo "existing_pr=true" >> "$GITHUB_OUTPUT"
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "pr_branch=${PR_BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "Found existing audit PR #${PR_NUMBER} on branch ${PR_BRANCH}"
+
+      - name: Test if existing PR still resolves audit
+        id: test-existing
+        if: steps.check-existing.outputs.existing_pr == 'true'
+        run: |
+          PR_BRANCH="${{ steps.check-existing.outputs.pr_branch }}"
+
+          # Checkout the PR branch and test audit
+          git fetch origin "$PR_BRANCH"
+          git checkout "$PR_BRANCH"
+
+          pnpm install --frozen-lockfile --ignore-scripts
+
+          if pnpm audit > /dev/null 2>&1; then
+            echo "pr_still_valid=true" >> "$GITHUB_OUTPUT"
+            echo "Existing PR still passes audit — nothing to do."
+          else
+            echo "pr_still_valid=false" >> "$GITHUB_OUTPUT"
+            echo "Existing PR no longer resolves all vulnerabilities."
+          fi
+
+      - name: Close stale PR
+        if: |
+          steps.check-existing.outputs.existing_pr == 'true' &&
+          steps.test-existing.outputs.pr_still_valid == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ steps.check-existing.outputs.pr_number }}"
+          PR_BRANCH="${{ steps.check-existing.outputs.pr_branch }}"
+
+          gh pr close "$PR_NUMBER" \
+            --comment "Closing: this PR no longer resolves all current audit vulnerabilities. A new PR will be generated." \
+            --delete-branch
+
+          echo "Closed stale PR #${PR_NUMBER} and deleted branch ${PR_BRANCH}."
+
+      - name: Re-checkout main
+        if: |
+          steps.check-existing.outputs.existing_pr != 'true' ||
+          steps.test-existing.outputs.pr_still_valid == 'false'
+        run: |
+          git checkout main
+          git pull origin main
+
+      - name: Install dependencies
+        id: install
+        if: |
+          steps.check-existing.outputs.existing_pr != 'true' ||
+          steps.test-existing.outputs.pr_still_valid == 'false'
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run pnpm audit
+        id: audit
+        if: |
+          steps.check-existing.outputs.existing_pr != 'true' ||
+          steps.test-existing.outputs.pr_still_valid == 'false'
+        run: |
+          set -o pipefail
+          if pnpm audit 2>&1 | tee audit-output.txt; then
+            echo "has_vulnerabilities=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_vulnerabilities=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Attempt pnpm upgrade
+        id: upgrade
+        if: steps.audit.outputs.has_vulnerabilities == 'true'
+        run: |
+          set -o pipefail
+          # Try a standard upgrade to resolve vulnerabilities
+          # --ignore-scripts avoids running lifecycle hooks (e.g. prepare: pre-commit install)
+          pnpm upgrade --ignore-scripts
+
+          # Re-run audit to see if upgrade resolved issues
+          if pnpm audit 2>&1 | tee audit-after-upgrade.txt; then
+            echo "upgrade_fixed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upgrade_fixed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Attempt pnpm audit --fix=override
+        id: audit-fix
+        if: steps.upgrade.outputs.upgrade_fixed == 'false'
+        run: |
+          set -o pipefail
+          # Remove existing overrides to prevent stale/conflicting ranges accumulating
+          if [ -f pnpm-workspace.yaml ]; then yq -i 'del(.overrides)' pnpm-workspace.yaml; fi
+
+          # Reinstall to regenerate lockfile without old overrides
+          pnpm install --no-frozen-lockfile --ignore-scripts
+
+          # Use pnpm audit --fix=override to add fresh overrides for vulnerable transitive deps
+          pnpm audit --fix=override 2>&1 | tee audit-fix-output.txt || true
+
+          # Reinstall with the new overrides
+          pnpm install --no-frozen-lockfile --ignore-scripts
+
+          # Verify the fix resolved the issues
+          if pnpm audit 2>&1 | tee audit-after-fix.txt; then
+            echo "audit_fix_resolved=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "audit_fix_resolved=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Determine fix method
+        id: fix-method
+        if: |
+          steps.upgrade.outputs.upgrade_fixed == 'true' ||
+          steps.audit-fix.outputs.audit_fix_resolved == 'true'
+        run: |
+          if [[ "${{ steps.upgrade.outputs.upgrade_fixed }}" == "true" ]]; then
+            echo "method=pnpm upgrade" >> "$GITHUB_OUTPUT"
+          else
+            echo "method=pnpm audit --fix=override" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create tracking issue
+        id: create-issue
+        if: |
+          steps.upgrade.outputs.upgrade_fixed == 'true' ||
+          steps.audit-fix.outputs.audit_fix_resolved == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FIX_METHOD="${{ steps.fix-method.outputs.method }}"
+
+          ISSUE_URL=$(gh issue create \
+            --title "Security: pnpm audit vulnerabilities ($(date +%Y-%m-%d))" \
+            --label "security,dependencies" \
+            --body "## Security Audit Vulnerabilities
+
+          The daily \`pnpm audit\` workflow detected vulnerabilities and was able to resolve them automatically.
+
+          **Fix method:** \`${FIX_METHOD}\`
+
+          A PR has been created to address these vulnerabilities. This issue will be closed when the PR is merged.")
+
+          ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oP '\d+$')
+          echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Create PR with verified commit
+        if: |
+          steps.upgrade.outputs.upgrade_fixed == 'true' ||
+          steps.audit-fix.outputs.audit_fix_resolved == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: chore/pnpm-audit-fix-${{ github.run_id }}
+          add-paths: |
+            package.json
+            pnpm-workspace.yaml
+            pnpm-lock.yaml
+          commit-message: 'chore: fix security vulnerabilities via ${{ steps.fix-method.outputs.method }}'
+          title: 'chore: fix pnpm audit vulnerabilities (${{ github.run_id }})'
+          body: |
+            ## Security Audit Auto-fix
+
+            This PR was automatically generated by the daily `pnpm audit` workflow.
+
+            **Fix method:** `${{ steps.fix-method.outputs.method }}`
+
+            Closes #${{ steps.create-issue.outputs.issue_number }}
+
+            ### What happened
+            - `pnpm audit` detected vulnerabilities in dependencies
+            - The workflow attempted to resolve them automatically
+            - All vulnerabilities were resolved
+
+            ### Next steps
+            - Review the dependency changes
+            - Ensure CI passes
+            - Merge when satisfied
+          labels: security,dependencies
+          delete-branch: true
+          sign-commits: true
+
+      - name: Create issue for unresolved vulnerabilities
+        if: |
+          steps.audit.outputs.has_vulnerabilities == 'true' &&
+          steps.upgrade.outputs.upgrade_fixed != 'true' &&
+          steps.audit-fix.outputs.audit_fix_resolved != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if there's already an open issue for unresolved audit vulnerabilities
+          EXISTING_ISSUE=$(gh issue list \
+            --state open \
+            --search "Security: unresolved pnpm audit vulnerabilities in:title" \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [[ -n "$EXISTING_ISSUE" ]]; then
+            # Add a comment with today's audit output to the existing issue
+            AUDIT_OUTPUT=$(cat audit-output.txt | head -100)
+            gh issue comment "$EXISTING_ISSUE" \
+              --body "## Daily audit re-check ($(date +%Y-%m-%d))
+
+          Vulnerabilities are still unresolved. Current audit output:
+
+          \`\`\`
+          ${AUDIT_OUTPUT}
+          \`\`\`"
+            echo "Updated existing issue #${EXISTING_ISSUE} with today's audit output."
+            exit 0
+          fi
+
+          AUDIT_OUTPUT=$(cat audit-output.txt | head -100)
+
+          gh issue create \
+            --title "Security: unresolved pnpm audit vulnerabilities ($(date +%Y-%m-%d))" \
+            --label "security,dependencies" \
+            --body "## Unresolved Security Vulnerabilities
+
+          The daily \`pnpm audit\` workflow found vulnerabilities that could not be automatically resolved.
+
+          ### Remediation attempts
+          1. ❌ \`pnpm upgrade\` — did not resolve all issues
+          2. ❌ \`pnpm audit --fix=override\` — did not resolve all issues
+
+          ### Audit output
+          \`\`\`
+          ${AUDIT_OUTPUT}
+          \`\`\`
+
+          ### Manual action required
+          - Review the vulnerable packages above
+          - Check if upstream fixes are available
+          - Consider replacing packages if no fix is forthcoming
+          - If the vulnerability is acceptable (e.g. dev-only, not exploitable in context), document the justification and close this issue"
