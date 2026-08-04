@@ -17,7 +17,7 @@ WORKFLOW_NAME_ENV_VAR = "WORKFLOW_NAME"
 COMMENT_AUTHOR = "{WORKFLOW_NAME}-icav2-wes-event-service"
 
 
-def handler(event, context):
+def handler(event, context) -> dict:
     """
     Add a comment to the ICA analysis indicating failure.
 
@@ -49,6 +49,12 @@ def handler(event, context):
         workflow_run_orcabus_id=workflow_run_id,
         comment=full_comment,
         author=COMMENT_AUTHOR.format(
-            WORKFLOW_NAME=environ.get(WORKFLOW_NAME_ENV_VAR)
+            WORKFLOW_NAME=environ.get(WORKFLOW_NAME_ENV_VAR, "unknown")
         )
     )
+
+    return {
+        "status": "comment_added",
+        "portalRunId": portal_run_id,
+        "workflowRunId": workflow_run_id
+    }
