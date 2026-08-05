@@ -1,50 +1,40 @@
 name: Pull Request Tests
 
 on:
-  merge_group:
+  merge_group: {}
   pull_request:
-    paths-ignore:
-      # The ignore only works only if changes to the main branch only include the following files.
-      # So if the commit only contain .md changes but the PR change contain more, the ignore fails
-      # https://github.com/actions/runner/issues/2324#issuecomment-1703345084
-      - '**.md'
-      - '**.svg'
-      - '**.drawio'
-      - '**.png'
     types:
       - opened
       - reopened
       - synchronize
       - ready_for_review
-      - auto_merge_enabled
     branches:
       - main
 
 permissions: read-all
 
 # Actions Used (please keep this documented here as added)
-#  https://github.com/marketplace/actions/checkout
-#  https://github.com/marketplace/actions/setup-python
-#  https://github.com/marketplace/actions/trufflehog-oss
-#  https://github.com/marketplace/actions/checkout
-#  https://github.com/marketplace/actions/cache
-#  https://github.com/actions-rust-lang/setup-rust-toolchain
+#  https://github.com/marketplace/actions/checkout (v7)
+#  https://github.com/marketplace/actions/setup-node-js-environment (v7)
+#  https://github.com/marketplace/actions/setup-pnpm (v6)
+#  https://github.com/marketplace/actions/trufflehog-oss (v3.96.0)
+#  https://github.com/dorny/paths-filter (v4)
 
 jobs:
   pre-commit-lint-security:
     runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.draft && github.repository != 'OrcaBus/template-service-base' }}
+    if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22.x'
+          node-version: '24.x'
           cache: 'pnpm'
 
       - run: corepack enable
@@ -62,7 +52,7 @@ jobs:
           pip3 install pre-commit detect-secrets black ggshield
 
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@v3.34.0
+        uses: trufflesecurity/trufflehog@v3.96.0
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
@@ -77,18 +67,48 @@ jobs:
         run: |
           make check
 
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_test: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            code:
+              - '**/*.ts'
+              - '**/*.sh'
+              - '**/*.py'
+              - '**/package.json'
+              - '**/pnpm-lock.yaml'
+              - 'infrastructure/**'
+              - 'app/**'
+              - 'test/**'
+              - 'Makefile'
+              - '.github/**'
+              - 'cdk.json'
+              - 'tsconfig.json'
+              - 'jest.config.*'
   test-iac:
     runs-on: ubuntu-22.04-arm
-    # Template service base is broken with
-    if: ${{ !github.event.pull_request.draft && github.repository != 'OrcaBus/template-service-base' }}
+    # Excluded for template-service-base which has no application code to test
+    if: >-
+      !github.event.pull_request.draft &&
+      github.repository != 'OrcaBus/template-service-base' &&
+      needs.check-changes.outputs.should_test == 'true'
+    needs: check-changes
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22.x'
+          node-version: '24.x'
           cache: 'pnpm'
 
       - run: corepack enable
@@ -96,3 +116,25 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
       - run: pnpm test
+
+  # This is the job you set as "required" in branch protection
+  ci-gate:
+    runs-on: ubuntu-latest
+    needs: [pre-commit-lint-security, check-changes, test-iac]
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          if [[ "${{ needs.pre-commit-lint-security.result }}" != "success" && "${{ needs.pre-commit-lint-security.result }}" != "skipped" ]]; then
+            echo "Lint/security checks did not succeed (result: ${{ needs.pre-commit-lint-security.result }})"
+            exit 1
+          fi
+          if [[ "${{ needs.check-changes.result }}" != "success" ]]; then
+            echo "Change detection did not succeed (result: ${{ needs.check-changes.result }})"
+            exit 1
+          fi
+          if [[ "${{ needs.test-iac.result }}" != "success" && "${{ needs.test-iac.result }}" != "skipped" ]]; then
+            echo "Tests did not succeed (result: ${{ needs.test-iac.result }})"
+            exit 1
+          fi
+          echo "CI passed (tests passed or were skipped)"
