@@ -21,6 +21,12 @@ def handler(event, context):
     # Get the workflow run object
     workflow_payload = get_latest_payload_from_portal_run_id(portal_run_id)
 
+    # No payload attached to the current state yet
+    if workflow_payload is None:
+        return {
+            "payload": {}
+        }
+
     # Return the workflow payload object
     return {
         "payload": workflow_payload
