@@ -28,6 +28,11 @@ def handler(event, context):
     try:
         payload = get_latest_payload_from_portal_run_id(portal_run_id)
     except HTTPError as e:
+        payload = None
+
+    # No payload found (either the portal run id does not exist,
+    # or the workflow run exists but has no payload yet)
+    if payload is None:
         return {
             "payload": {},
         }
