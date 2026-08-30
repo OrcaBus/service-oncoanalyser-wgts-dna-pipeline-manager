@@ -14,8 +14,8 @@ importers:
   .:
     dependencies:
       '@orcabus/platform-cdk-constructs':
-        specifier: 1.7.2
-        version: 1.7.2(@aws-cdk/aws-lambda-python-alpha@2.244.0-alpha.0(aws-cdk-lib@2.263.0(constructs@10.8.1))(constructs@10.8.1))(aws-cdk-lib@2.263.0(constructs@10.8.1))(constructs@10.8.1)
+        specifier: 1.9.3
+        version: 1.9.3(@aws-cdk/aws-lambda-python-alpha@2.244.0-alpha.0(aws-cdk-lib@2.263.0(constructs@10.8.1))(constructs@10.8.1))(aws-cdk-lib@2.263.0(constructs@10.8.1))(constructs@10.8.1)
       aws-cdk-lib:
         specifier: ^2.263.0
         version: 2.263.0(constructs@10.8.1)
@@ -445,8 +445,8 @@ packages:
       '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.3
       '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.3
 
-  '@orcabus/platform-cdk-constructs@1.7.2':
-    resolution: {integrity: sha512-oayS7Cpe94ZrwLIzKgDuHC1uOeN8r88CpgJDo3NIOyLp4wVCgAtTFPA+GL/mAL43PICLC++rfQcUFcgbx60IhQ==}
+  '@orcabus/platform-cdk-constructs@1.9.3':
+    resolution: {integrity: sha512-z7w691dMipleyRWKOk8wsE5E8J/WvieR8RUOY98XKIxEMj3BqeIdeTsaf1gxdGZJio03vEVSUXuJr0acgwl9gA==}
     peerDependencies:
       '@aws-cdk/aws-lambda-python-alpha': ^2.244.0-alpha.0
       aws-cdk-lib: ^2.244.0
@@ -2339,7 +2339,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@orcabus/platform-cdk-constructs@1.7.2(@aws-cdk/aws-lambda-python-alpha@2.244.0-alpha.0(aws-cdk-lib@2.263.0(constructs@10.8.1))(constructs@10.8.1))(aws-cdk-lib@2.263.0(constructs@10.8.1))(constructs@10.8.1)':
+  '@orcabus/platform-cdk-constructs@1.9.3(@aws-cdk/aws-lambda-python-alpha@2.244.0-alpha.0(aws-cdk-lib@2.263.0(constructs@10.8.1))(constructs@10.8.1))(aws-cdk-lib@2.263.0(constructs@10.8.1))(constructs@10.8.1)':
     dependencies:
       '@aws-cdk/aws-lambda-python-alpha': 2.244.0-alpha.0(aws-cdk-lib@2.263.0(constructs@10.8.1))(constructs@10.8.1)
       aws-cdk-lib: 2.263.0(constructs@10.8.1)
