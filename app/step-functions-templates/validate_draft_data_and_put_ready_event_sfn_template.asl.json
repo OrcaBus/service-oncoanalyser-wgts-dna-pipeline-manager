@@ -24,7 +24,7 @@
           "payloadVersion": "{% $payload.version %}",
           "data": "{% $payloadData %}",
           "workflowRunId": "{% $workflowRunId %}",
-          "addCommentOnError": true
+          "addCommentOnError": false
         }
       },
       "Retry": [
