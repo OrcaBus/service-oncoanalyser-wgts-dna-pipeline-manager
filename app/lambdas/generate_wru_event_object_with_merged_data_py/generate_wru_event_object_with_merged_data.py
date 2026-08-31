@@ -50,6 +50,14 @@ def handler(event, context):
             libraries
         ))
 
+    # The draft payload may be empty ({}) or None when the workflow run has no
+    # payload yet (get_draft_payload returns {"payload": {}} in that case).
+    # Guard against missing 'data' before accessing payload['data'].
+    if payload is None:
+        payload = {}
+    if 'data' not in payload or payload['data'] is None:
+        payload['data'] = {}
+
     # First check if the oncoanalyser draft workflow object has the fields we would update with the
 
     # Generate a workflow run update object with the merged data
@@ -59,7 +67,7 @@ def handler(event, context):
     ):
         # Return the OG, we dont want to overwrite existing data
         oncoanalyser_draft_workflow_update["payload"] = {
-            "version": payload['version'],
+            "version": payload.get('version'),
             "data": payload['data']
         }
         return {
@@ -81,7 +89,7 @@ def handler(event, context):
 
     # Update the inputs with the dragen draft payload data
     oncoanalyser_draft_workflow_update["payload"] = {
-        "version": payload['version'],
+        "version": payload.get('version'),
         "data": new_data_object
     }
 
