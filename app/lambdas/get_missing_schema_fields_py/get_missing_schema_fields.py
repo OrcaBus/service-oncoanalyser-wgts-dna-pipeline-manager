@@ -66,6 +66,24 @@ def get_missing_required_fields_for_schema_option(
     return missing_fields
 
 
+def get_one_of_option_label(option: dict, path: str, idx: int) -> str:
+    """
+    Build a human-friendly label for a single oneOf option.
+
+    For $ref options, use the referenced definition name (e.g. 'fastqDataInputs').
+    For inline options, fall back to the required fields that distinguish the option,
+    otherwise a positional 'option N' label.
+    """
+    if "$ref" in option:
+        option_name = option["$ref"].rsplit("/", 1)[-1]
+    elif option.get("required"):
+        option_name = "+".join(option["required"])
+    else:
+        option_name = f"option {idx}"
+
+    return f"{path}: {option_name} path" if path else f"{option_name} path"
+
+
 def get_one_of_missing_field_summaries(
         schema: dict,
         error: jsonschema.ValidationError,
@@ -74,17 +92,23 @@ def get_one_of_missing_field_summaries(
     """
     Summarise oneOf validation failures without exposing every nested conditional.
 
-    Assumes oneOf options are $ref objects. For each referenced option, collect the
-    missing required fields. Then pair equivalent missing fields into concise
-    'either X or Y' messages.
+    Handles both $ref options and inline schema options. For each option, resolve the
+    schema (following a $ref where present) and collect the missing required fields,
+    producing one concise summary entry per option so the caller can render an
+    'either X or Y' message instead of duplicated nested errors.
     """
     missing_field_options = []
 
     for idx, option in enumerate(error.validator_value, start=1):
-        if not (isinstance(option, dict) and "$ref" in option):
+        if not isinstance(option, dict):
             continue
 
-        resolved_option = resolve_schema_ref(schema, option["$ref"])
+        # Resolve $ref options, use inline options directly.
+        if "$ref" in option:
+            resolved_option = resolve_schema_ref(schema, option["$ref"])
+        else:
+            resolved_option = option
+
         option_missing_fields = get_missing_required_fields_for_schema_option(
             resolved_option,
             error.instance,
@@ -94,7 +118,7 @@ def get_one_of_missing_field_summaries(
         if option_missing_fields:
             missing_field_options.append(
                 {
-                    f'{path}: {option["$ref"].rsplit("/")[-1]} path': option_missing_fields
+                    get_one_of_option_label(option, path, idx): option_missing_fields
                 }
             )
 
